@@ -1,13 +1,21 @@
 :root {
-  --accent: rgb(138, 90, 16);
-  --accent-text: rgb(255, 255, 255);
-  --bg: rgb(243, 241, 236);
-  --border: rgb(214, 208, 198);
-  --danger: rgb(176, 48, 48);
-  --muted: rgb(110, 104, 96);
-  --surface: rgb(255, 255, 255);
-  --surface-2: rgb(250, 249, 246);
-  --text: rgb(36, 33, 30);
+  --accent: rgb(232, 178, 44);
+  --accent-text: rgb(24, 18, 6);
+  --bg: rgb(12, 11, 10);
+  --border: rgb(72, 60, 36);
+  --danger: rgb(226, 82, 68);
+  --muted: rgb(166, 156, 136);
+  --sin-envy: rgb(160, 84, 224);
+  --sin-gloom: rgb(40, 180, 230);
+  --sin-gluttony: rgb(140, 200, 40);
+  --sin-lust: rgb(240, 120, 30);
+  --sin-pride: rgb(60, 110, 240);
+  --sin-sloth: rgb(232, 196, 40);
+  --sin-wrath: rgb(222, 44, 36);
+  --surface: rgb(24, 22, 19);
+  --surface-2: rgb(34, 31, 26);
+  --text: rgb(238, 232, 216);
+  color-scheme: dark;
 }
  
 *,
@@ -31,12 +39,17 @@ a {
  
 h1 {
   margin: 0;
+  color: var(--accent);
   font-size: 1.5rem;
 }
  
 h2 {
   margin: 0 0 0.75rem;
+  padding-block-end: 0.5rem;
+  border-bottom: 0.063rem solid var(--border);
+  color: var(--accent);
   font-size: 1.125rem;
+  letter-spacing: 0.05rem;
 }
  
 h3 {
@@ -56,13 +69,15 @@ small {
   flex-wrap: wrap;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  background: var(--surface);
-  border-bottom: 0.063rem solid var(--border);
+  background: var(--bg);
+  border-bottom: 0.125rem solid var(--accent);
 }
  
 .site-header a {
+  color: var(--accent);
   font-size: 1.125rem;
   font-weight: bold;
+  letter-spacing: 0.1rem;
   text-decoration: none;
 }
  
@@ -138,6 +153,10 @@ small {
   text-decoration: none;
 }
  
+.jump a:hover {
+  border-color: var(--accent);
+}
+ 
 .sheet {
   min-width: 0;
   margin: 0;
@@ -169,6 +188,53 @@ small {
   margin-block-start: 0;
 }
  
+.sub-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block-end: 0.5rem;
+  font-weight: bold;
+}
+ 
+.tactic {
+  --sin-color: var(--border);
+  border-inline-start: 0.25rem solid var(--sin-color);
+}
+ 
+.tactic[data-sin="憤怒"] {
+  --sin-color: var(--sin-wrath);
+}
+ 
+.tactic[data-sin="色欲"] {
+  --sin-color: var(--sin-lust);
+}
+ 
+.tactic[data-sin="怠惰"] {
+  --sin-color: var(--sin-sloth);
+}
+ 
+.tactic[data-sin="暴食"] {
+  --sin-color: var(--sin-gluttony);
+}
+ 
+.tactic[data-sin="憂鬱"] {
+  --sin-color: var(--sin-gloom);
+}
+ 
+.tactic[data-sin="傲慢"] {
+  --sin-color: var(--sin-pride);
+}
+ 
+.tactic[data-sin="嫉妬"] {
+  --sin-color: var(--sin-envy);
+}
+ 
+.pair {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 8rem 1fr;
+}
+ 
 .grid {
   display: grid;
   gap: 0.75rem;
@@ -181,6 +247,49 @@ small {
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-block-end: 0.5rem;
+}
+ 
+.handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 2.25rem;
+  width: 2.25rem;
+  height: 2.5rem;
+  background: var(--surface-2);
+  border: 0.063rem solid var(--border);
+  border-radius: 0.375rem;
+  color: var(--muted);
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: grab;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+ 
+.handle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+ 
+.sheet:disabled .handle {
+  display: none;
+}
+ 
+.dragging {
+  position: relative;
+  z-index: 5;
+  border-color: var(--accent);
+  box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.6);
+  opacity: 0.92;
+}
+ 
+body.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+  -webkit-user-select: none;
 }
  
 .f {
@@ -212,7 +321,7 @@ small {
 .f textarea {
   width: 100%;
   padding: 0.5rem 0.625rem;
-  background: var(--surface-2);
+  background: var(--bg);
   border: 0.063rem solid var(--border);
   border-radius: 0.375rem;
   color: var(--text);
@@ -235,7 +344,7 @@ small {
   align-items: center;
   justify-content: center;
   padding: 0.5rem 0.875rem;
-  background: var(--surface);
+  background: var(--surface-2);
   border: 0.063rem solid var(--border);
   border-radius: 0.375rem;
   color: var(--text);
@@ -254,6 +363,7 @@ small {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--accent-text);
+  font-weight: bold;
 }
  
 .btn.danger {
@@ -362,6 +472,10 @@ small {
   text-decoration: none;
 }
  
+.char-main strong {
+  color: var(--accent);
+}
+ 
 .char-main span {
   color: var(--muted);
   font-size: 0.85rem;
@@ -371,13 +485,13 @@ dialog {
   width: min(90vw, 40rem);
   padding: 0;
   background: var(--surface);
-  border: 0.063rem solid var(--border);
+  border: 0.063rem solid var(--accent);
   border-radius: 0.5rem;
   color: var(--text);
 }
  
 dialog::backdrop {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.7);
 }
  
 .dialog-body {
@@ -387,7 +501,7 @@ dialog::backdrop {
 .dialog-body textarea {
   width: 100%;
   padding: 0.5rem;
-  background: var(--surface-2);
+  background: var(--bg);
   border: 0.063rem solid var(--border);
   color: var(--text);
   font-family: inherit;
@@ -400,10 +514,11 @@ dialog::backdrop {
   z-index: 100;
   max-width: 90vw;
   padding: 0.625rem 1rem;
-  background: rgb(40, 38, 35);
+  background: var(--accent);
   border-radius: 0.5rem;
-  color: rgb(255, 255, 255);
+  color: var(--accent-text);
   font-size: 0.9rem;
+  font-weight: bold;
   opacity: 0;
   pointer-events: none;
   transform: translateX(-50%);
@@ -412,20 +527,6 @@ dialog::backdrop {
  
 #toast.show {
   opacity: 1;
-}
- 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --accent: rgb(214, 162, 72);
-    --accent-text: rgb(30, 22, 8);
-    --bg: rgb(22, 21, 20);
-    --border: rgb(66, 62, 57);
-    --danger: rgb(240, 120, 120);
-    --muted: rgb(163, 156, 146);
-    --surface: rgb(33, 32, 30);
-    --surface-2: rgb(42, 40, 37);
-    --text: rgb(236, 232, 225);
-  }
 }
  
 @media only screen and (max-width: 640px) {
@@ -444,6 +545,10 @@ dialog::backdrop {
  
   .grid {
     grid-template-columns: 1fr 1fr;
+  }
+ 
+  .pair {
+    grid-template-columns: 6.5rem 1fr;
   }
  
   .f.narrow {
