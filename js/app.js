@@ -27,9 +27,10 @@
   var STORE_KEY = 'limbus-trpg-sheets-v1';
   var DICE_LINE = /^\s*((?:\d+-)?\d+[dD]\d+(?:[+-]\d+)?)\s*(?:[：:]\s*(.*))?$/;
 
-  var RICH_TAGS = ['b', 'strong', 'u', 'i', 'em', 's', 'del', 'span', 'div', 'p', 'br', 'hr', 'a'];
-  var RICH_DROP = ['script', 'style', 'noscript', 'template', 'iframe', 'object', 'embed', 'title'];
   var COLOR_RE = /^(#[0-9a-f]{3,8}|[a-z]{3,24}|(?:rgb|hsl)a?\([0-9.,%\s\/deg]+\))$/i;
+
+  var EGO_TABS = [['awaken', '覚醒'], ['corrosion', '侵食'], ['passive', 'パッシブ']];
+  var egoTabs = {};
 
   var app = document.getElementById('app');
   var dialog = document.getElementById('dialog');
@@ -159,6 +160,15 @@
     return { title: '', dateStart: '', dateEnd: '', kp: '', memo: '' };
   }
 
+  function emptyEgo() {
+    return {
+      req: '',
+      passive: emptyPassive(),
+      awaken: { sin: '', type: '', text: '' },
+      corrosion: { sin: '', type: '', text: '' }
+    };
+  }
+
   function emptyEquipped() {
     return {
       name: '',
@@ -190,6 +200,7 @@
       death: emptyPassive(),
       items: [],
       ego: { ZAYIN: '', TETH: '', HE: '', WAW: '', ALEPH: '' },
+      egoDetail: { ZAYIN: emptyEgo(), TETH: emptyEgo(), HE: emptyEgo(), WAW: emptyEgo(), ALEPH: emptyEgo() },
       currency: { lp: '', shards: '' },
       owned: { personalities: [], egos: [], support: [], spirits: [], death: [] },
       scenarios: [],
@@ -238,6 +249,9 @@
     s.equipped = normEquipped(s.equipped);
     s.support = fixList(s.support, emptyPassive, 3);
     s.death = merge(emptyPassive(), isObj(s.death) ? s.death : {});
+    EGO_RANKS.forEach(function (r) {
+      s.egoDetail[r] = merge(emptyEgo(), isObj(s.egoDetail[r]) ? s.egoDetail[r] : {});
+    });
     s.items = fixList(s.items, emptyItem);
     s.memos = fixList(s.memos, emptyMemo);
     s.scenarios = fixList(s.scenarios, emptyScenario);
@@ -422,52 +436,89 @@
     return out.join(';');
   }
 
-  function cleanNode(node) {
-    var out = '';
-    Array.prototype.forEach.call(node.childNodes, function (n) {
-      if (n.nodeType === 3) {
-        out += esc(n.nodeValue);
-        return;
-      }
-      if (n.nodeType !== 1) {
-        return;
-      }
-      var tag = n.nodeName.toLowerCase();
-      if (RICH_DROP.indexOf(tag) >= 0) {
-        return;
-      }
-      if (RICH_TAGS.indexOf(tag) < 0) {
-        out += cleanNode(n);
-        return;
-      }
-      if (tag === 'br' || tag === 'hr') {
-        out += '<' + tag + '>';
-        return;
-      }
-      var attrs = '';
-      if (tag === 'a') {
-        var href = (n.getAttribute('href') || '').trim();
-        if (!/^https?:\/\//i.test(href)) {
-          out += cleanNode(n);
-          return;
-        }
-        attrs = ' href="' + esc(href) + '" target="_blank" rel="noopener noreferrer"';
-      }
-      var st = cleanStyle(n.getAttribute('style'));
-      if (st) {
-        attrs += ' style="' + esc(st) + '"';
-      }
-      out += '<' + tag + attrs + '>' + cleanNode(n) + '</' + tag + '>';
-    });
-    return out;
+  function inlineFmt(s) {
+    return s
+      .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+      .replace(/__(.+?)__/g, '<u>$1</u>')
+      .replace(/~~(.+?)~~/g, '<s>$1</s>')
+      .replace(/\*([^*\s](?:[^*]*?[^*\s])?)\*/g, '<i>$1</i>');
   }
 
-  function richHTML(text) {
+  function mdInline(raw, st, styles) {
+    var links = [];
+    var s = esc(raw).replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, function (m, t, u) {
+      links.push('<a href="' + u + '" target="_blank" rel="noopener noreferrer">' + inlineFmt(t) + '</a>');
+      return '' + (links.length - 1) + '';
+    });
+    s = inlineFmt(s).replace(/(\d+)/g, function (m, i) {
+      return links[Number(i)];
+    });
+    var before = st.filter(Boolean);
+    s = s.replace(/(\d+)|/g, function (m, i) {
+      if (i !== undefined) {
+        var css = styles[Number(i)];
+        st.push(css);
+        return css ? '<span style="' + esc(css) + '">' : '';
+      }
+      return st.pop() ? '</span>' : '';
+    });
+    return before.map(function (c) {
+      return '<span style="' + esc(c) + '">';
+    }).join('') + s + st.filter(Boolean).map(function () {
+      return '</span>';
+    }).join('');
+  }
+
+  function mdHTML(text) {
     if (!text) {
       return '';
     }
-    var doc = new DOMParser().parseFromString('<!doctype html><body>' + text, 'text/html');
-    return cleanNode(doc.body);
+    var styles = [];
+    var src = String(text).replace(/[-]/g, '').replace(/<span\s+style\s*=\s*(?:"([^"]*)"|'([^']*)')\s*>|<\/span\s*>/gi, function (m, a, b) {
+      if (/^<\/span/i.test(m)) {
+        return '';
+      }
+      styles.push(cleanStyle(a !== undefined ? a : b));
+      return '' + (styles.length - 1) + '';
+    });
+    var st = [];
+    var out = '';
+    var stack = [];
+    function closeTo(indent) {
+      while (stack.length && stack[stack.length - 1].indent > indent) {
+        out += '</li></' + stack.pop().type + '>';
+      }
+    }
+    src.split(/\r?\n/).forEach(function (line) {
+      var m = line.match(/^(\s*)(?:[*+-]|(\d+)[.)])\s+(.*)$/);
+      if (m) {
+        var indent = m[1].replace(/\t/g, '    ').length;
+        var type = m[2] !== undefined ? 'ol' : 'ul';
+        closeTo(indent);
+        var top = stack[stack.length - 1];
+        if (top && top.indent === indent) {
+          if (top.type === type) {
+            out += '</li><li>';
+          } else {
+            out += '</li></' + top.type + '><' + type + '><li>';
+            top.type = type;
+          }
+        } else {
+          out += '<' + type + '><li>';
+          stack.push({ indent: indent, type: type });
+        }
+        out += mdInline(m[3], st, styles);
+        return;
+      }
+      closeTo(-1);
+      if (/^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(line)) {
+        out += '<hr>';
+        return;
+      }
+      out += '<div class="ln">' + mdInline(line, st, styles) + '</div>';
+    });
+    closeTo(-1);
+    return out;
   }
 
   function findPersona(name) {
@@ -593,7 +644,6 @@
   }
 
   var HANDLE = '<span class="handle" title="ドラッグで並べ替え（スマホは長押ししてからドラッグ）" aria-label="並べ替え">☰</span>';
-  var HANDLE_L = '<span class="handle left" title="ドラッグで並べ替え（スマホは長押ししてからドラッグ）" aria-label="並べ替え">☰</span>';
 
   function datalist(id, values) {
     return '<datalist id="' + id + '">' + values.map(function (v) {
@@ -644,29 +694,6 @@
     return h;
   }
 
-  function egoDetailHTML(rank) {
-    var name = S.ego[rank];
-    if (!name) {
-      return '';
-    }
-    var g = D.egos.filter(function (e) {
-      return e.name === name;
-    })[0];
-    if (g) {
-      return '<details class="detail"><summary>' + esc(g.name) + '（必要資源：' + esc(g.req) + '）</summary>' +
-        '<p><b>パッシブ：' + esc(g.passive.name) + '</b>（' + esc(g.passive.cond) + '）<br>' + esc(g.passive.effect) + '</p>' +
-        '<p><b>覚醒：</b>' + esc(g.awaken.type) + '：' + esc(g.awaken.sin) + '<br>' + esc(g.awaken.text).replace(/\n/g, '<br>') + '</p>' +
-        '<p><b>侵蝕：</b>' + esc(g.corrosion.type) + '：' + esc(g.corrosion.sin) + '<br>' + esc(g.corrosion.text).replace(/\n/g, '<br>') + '</p></details>';
-    }
-    var own = (S.owned.egos || []).filter(function (e) {
-      return e.name === name && e.detail;
-    })[0];
-    if (own) {
-      return '<details class="detail"><summary>' + esc(name) + '（所持E.G.Oのメモ）</summary><p>' + esc(own.detail).replace(/\n/g, '<br>') + '</p></details>';
-    }
-    return '';
-  }
-
   function spiritHint() {
     var s = D.spirits.filter(function (x) {
       return x.name === S.spirit;
@@ -674,11 +701,21 @@
     return s ? '士気低下：' + s.morale + ' ／ 混乱：' + s.panic : '';
   }
 
+  function sinTypeHTML(p) {
+    return '<div class="f wide"><span>罪悪属性</span><div class="pair">' +
+      selectEl(p + '.sin', SINS, { blank: true, blankLabel: '罪悪' }) +
+      '<input type="text" data-path="' + p + '.type" list="dl-type" placeholder="属性" value="' + esc(getPath(S, p + '.type')) + '" autocomplete="off">' +
+      '</div></div>';
+  }
+
   function pcbarHTML() {
     return '<div class="pcbar"><strong data-pcname></strong></div>';
   }
 
   function bottombarHTML() {
+    if (RO) {
+      return '<nav class="bottombar"><button type="button" class="btn" data-action="ccfolia">駒出力</button></nav>';
+    }
     return '<nav class="bottombar">' +
       '<a class="btn" href="#/">一覧</a>' +
       '<button type="button" class="btn" data-action="share">共有</button>' +
@@ -697,18 +734,18 @@
 
   function statusHTML() {
     var e = S.equipped;
-    return '<section class="card"><h2>装備人格・ステータス</h2><div class="grid">' +
-      F('装備する人格', 'equipped.name', { list: 'dl-persona', fill: 'persona', cls: 'wide', ph: '名前を入力すると候補が出ます' }) +
-      F('人格の所属', 'equipped.affiliation') +
-      F('HP（基礎値）', 'equipped.hp', { type: 'number' }) +
-      F('SAN（基礎値）', 'equipped.san', { type: 'number' }) +
-      F('速度', 'equipped.speed') +
-      F('斬撃', 'equipped.resist.slash', { list: 'dl-resist' }) +
-      F('貫通', 'equipped.resist.pierce', { list: 'dl-resist' }) +
-      F('打撃', 'equipped.resist.blunt', { list: 'dl-resist' }) +
-      F('保有弾丸数', 'equipped.bullets', { type: 'number' }) +
-      F('精神', 'spirit', { list: 'dl-spirit', fill: 'spirit' }) +
-      '</div><p class="hint" id="spirit-hint">' + esc(spiritHint()) + '</p>' +
+    return '<section class="card"><h2>装備人格・ステータス</h2><div class="stack">' +
+      F('装備する人格', 'equipped.name', { list: 'dl-persona', fill: 'persona', ph: '名前を入力すると候補が出ます' }) +
+      '<div class="stats">' +
+      F('HP（基礎値）', 'equipped.hp', { type: 'number', cls: 's-hp' }) +
+      F('SAN（基礎値）', 'equipped.san', { type: 'number', cls: 's-san' }) +
+      F('斬撃', 'equipped.resist.slash', { list: 'dl-resist', cls: 's-sla' }) +
+      F('速度', 'equipped.speed', { cls: 's-spd' }) +
+      F('貫通', 'equipped.resist.pierce', { list: 'dl-resist', cls: 's-pie' }) +
+      F('保有弾丸数', 'equipped.bullets', { type: 'number', cls: 's-bul' }) +
+      F('打撃', 'equipped.resist.blunt', { list: 'dl-resist', cls: 's-blu' }) +
+      F('精神', 'spirit', { list: 'dl-spirit', fill: 'spirit', cls: 's-spi' }) +
+      '</div></div><p class="hint" id="spirit-hint">' + esc(spiritHint()) + '</p>' +
       '<p class="derived" id="derived"></p>' +
       (e.notes !== undefined ? T('固有の効果・メモ', 'equipped.notes', 3) : '') +
       '</section>';
@@ -749,10 +786,7 @@
       var p = 'equipped.tactics.' + i;
       h += '<div class="sub tactic" data-tactic="' + i + '"><h3 class="title-row"><span>戦術' + i + ' -</span>' +
         titleInput(p + '.name', '戦術名') + '</h3><div class="grid">' +
-        '<div class="f wide"><span>罪悪属性</span><div class="pair">' +
-        selectEl(p + '.sin', SINS, { blank: true, blankLabel: '罪悪' }) +
-        '<input type="text" data-path="' + p + '.type" list="dl-type" placeholder="属性" value="' + esc(getPath(S, p + '.type')) + '" autocomplete="off">' +
-        '</div></div>' +
+        sinTypeHTML(p) +
         T('効果', p + '.text', 5) +
         '</div></div>';
     }
@@ -776,8 +810,24 @@
   function egoHTML() {
     var h = '<section class="card"><h2>装備E.G.O</h2>';
     EGO_RANKS.forEach(function (r) {
+      var b = 'egoDetail.' + r;
+      var cur = egoTabs[r] || 'awaken';
       h += '<div class="sub">' + F(r, 'ego.' + r, { list: 'dl-ego-' + r, fill: 'ego', idx: r }) +
-        '<div id="ego-detail-' + r + '">' + egoDetailHTML(r) + '</div></div>';
+        '<details class="detail" data-key="ego-' + r + '"><summary>必要資源・効果</summary><div class="stack">' +
+        F('必要資源', b + '.req') +
+        '<div class="tabs" role="tablist">' + EGO_TABS.map(function (t) {
+          return '<span class="tab' + (t[0] === cur ? ' on' : '') + '" role="tab" data-action="ego-tab" data-rank="' + r + '" data-tab="' + t[0] + '">' + t[1] + '</span>';
+        }).join('') + '</div>';
+      EGO_TABS.forEach(function (t) {
+        h += '<div class="tabpanel" data-rank="' + r + '" data-panel="' + t[0] + '"' + (t[0] === cur ? '' : ' hidden') + '>';
+        if (t[0] === 'passive') {
+          h += '<div class="grid">' + F('名称', b + '.passive.name') + F('発動条件', b + '.passive.cond') + T('効果', b + '.passive.effect', 4) + '</div>';
+        } else {
+          h += '<div class="stack">' + sinTypeHTML(b + '.' + t[0]) + T('効果', b + '.' + t[0] + '.text', 5) + '</div>';
+        }
+        h += '</div>';
+      });
+      h += '</div></details></div>';
     });
     return h + '</section>';
   }
@@ -833,7 +883,7 @@
     h += '<h3>所持E.G.O</h3><div class="sortable" data-sort="owned.egos">';
     S.owned.egos.forEach(function (o, i) {
       var p = 'owned.egos.' + i;
-      h += '<div class="sub sortitem" data-sort-idx="' + i + '">' + HANDLE_L +
+      h += '<div class="sub sortitem" data-sort-idx="' + i + '">' + HANDLE +
         '<h3 class="title-row">' + titleInput(p + '.name', 'E.G.O名', { list: 'dl-ego-all' }) + '</h3><div class="grid">' +
         SEL('危険度', p + '.rank', EGO_RANKS, { blank: true }) +
         T('内容（解析E.G.Oなど自作のとき）', p + '.detail', 3) +
@@ -894,13 +944,6 @@
     return h + '<button type="button" class="btn" data-action="add-scenario">シナリオを追加</button></section>';
   }
 
-  var MEMO_HELP = '<details class="detail" data-key="memohelp"><summary>装飾の書き方</summary>' +
-    '<p>' + esc('<b>太字</b> <u>下線</u> <i>斜体</i> <s>取り消し線</s>') + '</p>' +
-    '<p>' + esc('<span style="color:red">文字色</span>') + '（red・#e8b22c・rgb(232,178,44) など）</p>' +
-    '<p>' + esc('<span style="font-size:1.5rem">大きい文字</span>') + '（0.6〜3rem。px・em・% も可）</p>' +
-    '<p>' + esc('<a href="https://example.com">リンク</a>') + '（http / https のみ）</p>' +
-    '<p>' + esc('<hr>') + ' 区切り線 ／ ' + esc('<br>') + ' 改行 ／ ' + esc('<div> <p>') + ' も使えます。</p></details>';
-
   function memoHTML() {
     var h = '<section class="card"><h2>メモ</h2>';
     if (RO) {
@@ -911,11 +954,11 @@
         return h + '<p class="empty">メモはありません。</p></section>';
       }
       shown.forEach(function (m) {
-        h += '<div class="rich view">' + richHTML(m.text) + '</div>';
+        h += '<div class="rich view">' + mdHTML(m.text) + '</div>';
       });
       return h + '</section>';
     }
-    h += MEMO_HELP + '<div class="sortable" data-sort="memos">';
+    h += '<div class="sortable" data-sort="memos">';
     S.memos.forEach(function (m, i) {
       h += '<div class="sub sortitem" data-sort-idx="' + i + '">' + HANDLE +
         T('メモ', 'memos.' + i + '.text', 5, 'wide') +
@@ -931,7 +974,7 @@
       return d.dataset.key;
     }) : [];
     app.innerHTML = pcbarHTML() +
-      (RO ? '<div class="banner"><p>共有されたキャラシートです（閲覧専用）。</p><button type="button" class="btn primary" data-action="save-shared">自分用にコピーして保存</button></div>' : '') +
+      (RO ? '<div class="banner"><p>[閲覧専用] 共有されたキャラシートです。</p></div>' : '') +
       '<fieldset class="sheet"' + (RO ? ' disabled' : '') + '>' +
       basicHTML() + statusHTML() + passiveHTML() + supportHTML() + tacticsHTML() + itemsHTML() + egoHTML() +
       ownedHTML() + ctHTML() + scenarioHTML() + memoHTML() +
@@ -981,7 +1024,7 @@
     });
     Array.prototype.forEach.call(document.querySelectorAll('[data-memoview]'), function (el) {
       var m = S.memos[Number(el.dataset.memoview)];
-      el.innerHTML = m ? richHTML(m.text) : '';
+      el.innerHTML = m ? mdHTML(m.text) : '';
     });
     var cs = document.getElementById('ct-summary');
     if (cs) {
@@ -1237,25 +1280,32 @@
       download((S.name || 'character') + '.json', JSON.stringify(S, null, 2));
     },
     'share': function () {
+      var w = window.open('', '_blank');
       encodeSheet(S).then(function (payload) {
         var url = location.href.split('#')[0] + '#/s/' + payload;
-        copyText(url, '共有URL（' + url.length + '文字）');
-        if (url.length > 1800) {
-          toast('URLが長めです。チャットに貼ると途中で切れる場合があります');
+        if (w) {
+          w.location.href = url;
+        } else {
+          copyText(url, '共有URL（' + url.length + '文字）');
         }
+      }, function () {
+        if (w) {
+          w.close();
+        }
+      });
+    },
+    'ego-tab': function (el) {
+      var r = el.dataset.rank;
+      egoTabs[r] = el.dataset.tab;
+      Array.prototype.forEach.call(app.querySelectorAll('.tab[data-rank="' + r + '"]'), function (t) {
+        t.classList.toggle('on', t.dataset.tab === el.dataset.tab);
+      });
+      Array.prototype.forEach.call(app.querySelectorAll('.tabpanel[data-rank="' + r + '"]'), function (p) {
+        p.hidden = p.dataset.panel !== el.dataset.tab;
       });
     },
     'ccfolia': function () {
       copyText(JSON.stringify(ccfoliaData(S)), 'ココフォリア用コマ');
-    },
-    'save-shared': function () {
-      var c = clone(S);
-      c.id = uid();
-      c.createdAt = Date.now();
-      c.updatedAt = Date.now();
-      store.sheets[c.id] = c;
-      saveStore();
-      location.hash = '#/edit/' + c.id;
     },
     'add-item': function () {
       S.items.push({ name: '', count: '1', desc: '' });
@@ -1372,9 +1422,17 @@
         rerender();
       }
     } else if (kind === 'ego') {
-      var box = document.getElementById('ego-detail-' + el.dataset.idx);
-      if (box) {
-        box.innerHTML = egoDetailHTML(el.dataset.idx);
+      hit = D.egos.filter(function (x) {
+        return x.name === v;
+      })[0];
+      if (hit) {
+        S.egoDetail[el.dataset.idx] = merge(emptyEgo(), {
+          req: hit.req || '',
+          passive: clone(hit.passive || {}),
+          awaken: clone(hit.awaken || {}),
+          corrosion: clone(hit.corrosion || {})
+        });
+        rerender();
       }
     } else if (kind === 'spirit') {
       var hint = document.getElementById('spirit-hint');
