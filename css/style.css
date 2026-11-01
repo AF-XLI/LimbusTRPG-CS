@@ -17,13 +17,13 @@
   --text: rgb(238, 232, 216);
   color-scheme: dark;
 }
-
+ 
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
-
+ 
 body {
   margin: 0;
   background: var(--bg);
@@ -32,26 +32,26 @@ body {
   font-size: 1rem;
   line-height: 1.6;
 }
-
+ 
 body.has-bar {
   padding-block-end: 4.5rem;
 }
-
+ 
 ::placeholder {
   color: var(--muted);
   opacity: 0.5;
 }
-
+ 
 a {
   color: var(--accent);
 }
-
+ 
 h1 {
   margin: 0;
   color: var(--accent);
   font-size: 1.5rem;
 }
-
+ 
 h2 {
   margin: 0 0 0.75rem;
   padding-block-end: 0.5rem;
@@ -60,18 +60,18 @@ h2 {
   font-size: 1.125rem;
   letter-spacing: 0.05rem;
 }
-
+ 
 h3 {
   margin: 1.25rem 0 0.5rem;
   font-size: 1rem;
 }
-
+ 
 small {
   color: var(--muted);
   font-size: 0.8rem;
   font-weight: normal;
 }
-
+ 
 .site-header {
   display: flex;
   align-items: baseline;
@@ -81,7 +81,7 @@ small {
   background: var(--bg);
   border-bottom: 0.125rem solid var(--accent);
 }
-
+ 
 .site-header a {
   color: var(--accent);
   font-size: 1.125rem;
@@ -89,18 +89,18 @@ small {
   letter-spacing: 0.1rem;
   text-decoration: none;
 }
-
+ 
 .site-header span {
   color: var(--muted);
   font-size: 0.8rem;
 }
-
+ 
 #app {
   max-width: 60rem;
   margin: 0 auto;
   padding: 1rem;
 }
-
+ 
 .site-footer {
   max-width: 60rem;
   margin: 0 auto;
@@ -108,7 +108,7 @@ small {
   color: var(--muted);
   font-size: 0.8rem;
 }
-
+ 
 .pcbar {
   position: sticky;
   top: 0;
@@ -123,12 +123,12 @@ small {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
+ 
 .pcbar .is-unset {
   color: var(--muted);
   font-weight: normal;
 }
-
+ 
 .bottombar {
   position: fixed;
   right: 0;
@@ -143,12 +143,12 @@ small {
   background: var(--bg);
   border-top: 0.125rem solid var(--accent);
 }
-
+ 
 .bottombar .btn {
   flex: 1 1 0;
   max-width: 12rem;
 }
-
+ 
 .banner {
   display: flex;
   align-items: center;
@@ -161,18 +161,18 @@ small {
   border: 0.125rem solid var(--accent);
   border-radius: 0.5rem;
 }
-
+ 
 .banner p {
   margin: 0;
 }
-
+ 
 .sheet {
   min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
-
+ 
 .card {
   margin-block-end: 1rem;
   padding: 1rem;
@@ -180,11 +180,11 @@ small {
   border: 0.063rem solid var(--border);
   border-radius: 0.5rem;
 }
-
+ 
 .card > :last-child {
   margin-block-end: 0;
 }
-
+ 
 .sub {
   margin-block-end: 0.75rem;
   padding: 0.75rem;
@@ -192,11 +192,11 @@ small {
   border: 0.063rem solid var(--border);
   border-radius: 0.5rem;
 }
-
+ 
 .sub h3 {
   margin-block-start: 0;
 }
-
+ 
 .sub-head {
   display: flex;
   align-items: center;
@@ -204,45 +204,45 @@ small {
   margin-block-end: 0.5rem;
   font-weight: bold;
 }
-
+ 
 .sortitem {
   position: relative;
   padding-block-start: 1.5rem;
 }
-
+ 
 .tactic {
   --sin-color: var(--border);
   border-inline-start: 0.25rem solid var(--sin-color);
 }
-
+ 
 .tactic[data-sin="憤怒"] {
   --sin-color: var(--sin-wrath);
 }
-
+ 
 .tactic[data-sin="色欲"] {
   --sin-color: var(--sin-lust);
 }
-
+ 
 .tactic[data-sin="怠惰"] {
   --sin-color: var(--sin-sloth);
 }
-
+ 
 .tactic[data-sin="暴食"] {
   --sin-color: var(--sin-gluttony);
 }
-
+ 
 .tactic[data-sin="憂鬱"] {
   --sin-color: var(--sin-gloom);
 }
-
+ 
 .tactic[data-sin="傲慢"] {
   --sin-color: var(--sin-pride);
 }
-
+ 
 .tactic[data-sin="嫉妬"] {
   --sin-color: var(--sin-envy);
 }
-
+ 
 .title-row {
   display: flex;
   align-items: center;
@@ -250,11 +250,11 @@ small {
   margin: 0 0 0.5rem;
   font-size: 1rem;
 }
-
+ 
 .title-row > span {
   flex: 0 0 auto;
 }
-
+ 
 .title-input {
   flex: 1 1 auto;
   width: 100%;
@@ -270,29 +270,95 @@ small {
   font-weight: bold;
   line-height: 1.5;
 }
-
+ 
 .title-input:focus {
   border-bottom-color: var(--accent);
   outline: none;
 }
-
+ 
 .pair {
   display: grid;
   gap: 0.5rem;
   grid-template-columns: 8rem 1fr;
 }
-
+ 
 .grid {
   display: grid;
   gap: 0.75rem;
   grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
 }
-
+ 
 .stack {
   display: grid;
   gap: 0.75rem;
 }
-
+ 
+.stats {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-areas:
+    "hp san spd bul"
+    "spi sla pie blu";
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+ 
+.s-hp {
+  grid-area: hp;
+}
+ 
+.s-san {
+  grid-area: san;
+}
+ 
+.s-spd {
+  grid-area: spd;
+}
+ 
+.s-bul {
+  grid-area: bul;
+}
+ 
+.s-spi {
+  grid-area: spi;
+}
+ 
+.s-sla {
+  grid-area: sla;
+}
+ 
+.s-pie {
+  grid-area: pie;
+}
+ 
+.s-blu {
+  grid-area: blu;
+}
+ 
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 0.063rem solid var(--border);
+}
+ 
+.tab {
+  padding: 0.375rem 0.875rem;
+  border: 0.063rem solid transparent;
+  border-bottom: 0;
+  border-radius: 0.375rem 0.375rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+ 
+.tab.on {
+  background: var(--bg);
+  border-color: var(--border);
+  color: var(--accent);
+  font-weight: bold;
+}
+ 
 .row {
   display: flex;
   align-items: flex-end;
@@ -300,19 +366,19 @@ small {
   gap: 0.5rem;
   margin-block-end: 0.5rem;
 }
-
+ 
 .range {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
-
+ 
 .range i {
   flex: 0 0 auto;
   color: var(--muted);
   font-style: normal;
 }
-
+ 
 .handle {
   position: absolute;
   top: 0.125rem;
@@ -332,30 +398,27 @@ small {
   user-select: none;
   -webkit-user-select: none;
 }
-
+ 
 .handle::after {
+  content: "";
   position: absolute;
   top: -0.5rem;
   right: -0.5rem;
   bottom: -0.5rem;
   left: -0.5rem;
-  content: "";
 }
-
-.handle.left {
-  right: auto;
-  left: 0.375rem;
-}
-
+ 
 .handle:hover {
   color: var(--accent);
   opacity: 1;
 }
-
-.sheet:disabled .handle {
+ 
+.sheet:disabled .handle,
+.sheet:disabled .btn,
+.sheet:disabled .actions {
   display: none;
 }
-
+ 
 .dragging {
   position: relative;
   z-index: 5;
@@ -363,37 +426,37 @@ small {
   box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.6);
   opacity: 0.92;
 }
-
+ 
 body.is-dragging {
   cursor: grabbing;
   user-select: none;
   -webkit-user-select: none;
 }
-
+ 
 .f {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   min-width: 0;
 }
-
+ 
 .f > span {
   color: var(--muted);
   font-size: 0.8rem;
 }
-
+ 
 .f.wide {
   grid-column: 1 / -1;
 }
-
+ 
 .f.grow {
   flex: 1 1 12rem;
 }
-
+ 
 .f.narrow {
   flex: 0 0 6rem;
 }
-
+ 
 .f input,
 .f select,
 .f textarea {
@@ -407,48 +470,57 @@ body.is-dragging {
   font-size: 1rem;
   line-height: 1.5;
 }
-
+ 
 .f option {
   background: var(--bg);
   color: var(--text);
 }
-
+ 
 .f select.ph-select.is-empty {
   color: rgba(166, 156, 136, 0.55);
 }
-
+ 
 .f textarea {
   resize: vertical;
 }
-
+ 
 .f :is(input, select, textarea):focus {
   outline: 0.125rem solid var(--accent);
   outline-offset: 0;
 }
-
+ 
 .rich {
   margin-block-start: 0.5rem;
   padding: 0.5rem 0.75rem;
   border-inline-start: 0.25rem solid var(--border);
   overflow-wrap: anywhere;
-  white-space: pre-wrap;
 }
-
+ 
+.rich .ln {
+  min-height: 1.6rem;
+}
+ 
+.rich ul,
+.rich ol {
+  margin: 0;
+  padding-inline-start: 1.5rem;
+}
+ 
 .rich:empty {
   display: none;
 }
-
+ 
 .rich.view {
   margin-block-end: 0.75rem;
   background: var(--surface-2);
 }
-
+ 
 .rich hr {
   margin: 0.5rem 0;
   border: 0;
   border-top: 0.063rem solid var(--border);
 }
-
+ 
 .btn {
   display: inline-flex;
   align-items: center;
@@ -464,85 +536,85 @@ body.is-dragging {
   cursor: pointer;
   text-decoration: none;
 }
-
+ 
 .btn:hover {
   border-color: var(--accent);
 }
-
+ 
 .btn.primary {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--accent-text);
   font-weight: bold;
 }
-
+ 
 .btn.danger {
   color: var(--danger);
 }
-
+ 
 .btn.small {
   padding: 0.25rem 0.625rem;
   font-size: 0.8rem;
 }
-
+ 
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   margin-block-start: 0.5rem;
 }
-
+ 
 .hint {
   margin: 0.5rem 0;
   color: var(--muted);
   font-size: 0.85rem;
 }
-
+ 
 .derived {
   margin: 0.5rem 0;
   padding: 0.5rem 0.75rem;
   background: var(--surface-2);
   border-inline-start: 0.25rem solid var(--accent);
 }
-
+ 
 .empty {
   color: var(--muted);
 }
-
+ 
 .detail {
   margin-block-start: 0.5rem;
   font-size: 0.9rem;
 }
-
+ 
 .detail summary {
   cursor: pointer;
 }
-
+ 
 .detail p {
   margin: 0.5rem 0;
 }
-
+ 
 .checks {
   display: grid;
   gap: 0.5rem;
   margin-block-start: 0.75rem;
 }
-
+ 
 .check {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
 }
-
+ 
 .check small {
   display: block;
 }
-
+ 
 .ct-name {
   flex: 1 1 100%;
   font-weight: bold;
 }
-
+ 
 .list-head {
   display: flex;
   align-items: center;
@@ -551,17 +623,17 @@ body.is-dragging {
   justify-content: space-between;
   margin-block-end: 1rem;
 }
-
+ 
 .list-head .actions {
   margin: 0;
 }
-
+ 
 .char-list {
   margin: 0;
   padding: 0;
   list-style: none;
 }
-
+ 
 .char-list .card {
   display: flex;
   align-items: center;
@@ -569,11 +641,11 @@ body.is-dragging {
   gap: 0.5rem;
   justify-content: space-between;
 }
-
+ 
 .char-list .actions {
   margin: 0;
 }
-
+ 
 .char-main {
   display: flex;
   flex: 1 1 14rem;
@@ -581,16 +653,16 @@ body.is-dragging {
   color: var(--text);
   text-decoration: none;
 }
-
+ 
 .char-main strong {
   color: var(--accent);
 }
-
+ 
 .char-main span {
   color: var(--muted);
   font-size: 0.85rem;
 }
-
+ 
 dialog {
   width: min(90vw, 40rem);
   padding: 0;
@@ -599,15 +671,15 @@ dialog {
   border-radius: 0.5rem;
   color: var(--text);
 }
-
+ 
 dialog::backdrop {
   background: rgba(0, 0, 0, 0.7);
 }
-
+ 
 .dialog-body {
   padding: 1rem;
 }
-
+ 
 .dialog-body textarea {
   width: 100%;
   padding: 0.5rem;
@@ -616,7 +688,7 @@ dialog::backdrop {
   color: var(--text);
   font-family: inherit;
 }
-
+ 
 #toast {
   position: fixed;
   bottom: 4.5rem;
@@ -634,38 +706,47 @@ dialog::backdrop {
   transform: translateX(-50%);
   transition: opacity 0.2s;
 }
-
+ 
 #toast.show {
   opacity: 1;
 }
-
+ 
 @media only screen and (max-width: 640px) {
   #app {
     padding: 0.75rem;
   }
-
+ 
   .pcbar {
     margin: -0.75rem -0.75rem 0.75rem;
     padding: 0.5rem 0.75rem;
   }
-
+ 
   .bottombar {
     gap: 0.375rem;
     padding-inline: 0.5rem;
   }
-
+ 
   .card {
     padding: 0.75rem;
   }
-
+ 
   .grid {
     grid-template-columns: 1fr 1fr;
   }
-
+ 
+  .stats {
+    grid-template-areas:
+      "hp san"
+      "sla spd"
+      "pie bul"
+      "blu spi";
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+ 
   .pair {
     grid-template-columns: 6.5rem 1fr;
   }
-
+ 
   .f.narrow {
     flex: 0 0 5rem;
   }
