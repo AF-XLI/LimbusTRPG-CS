@@ -92,7 +92,7 @@ small {
 }
  
 .site-header span {
-  color: var(--bg);
+  color: var(--muted);
   font-size: 0.8rem;
 }
  
