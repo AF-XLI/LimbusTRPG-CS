@@ -153,7 +153,7 @@
   }
 
   function emptyMemo() {
-    return { text: '' };
+    return { title: '', text: '' };
   }
 
   function emptyScenario() {
@@ -742,7 +742,7 @@
       F('斬撃', 'equipped.resist.slash', { list: 'dl-resist', cls: 's-sla' }) +
       F('速度', 'equipped.speed', { cls: 's-spd' }) +
       F('貫通', 'equipped.resist.pierce', { list: 'dl-resist', cls: 's-pie' }) +
-      F('保有弾丸数', 'equipped.bullets', { type: 'number', cls: 's-bul' }) +
+      F('保有弾丸数', 'equipped.bullets', { type: 'number', cls: 's-bul', ph: 'なし' }) +
       F('打撃', 'equipped.resist.blunt', { list: 'dl-resist', cls: 's-blu' }) +
       F('精神', 'spirit', { list: 'dl-spirit', fill: 'spirit', cls: 's-spi' }) +
       '</div></div><p class="hint" id="spirit-hint">' + esc(spiritHint()) + '</p>' +
@@ -812,7 +812,7 @@
     EGO_RANKS.forEach(function (r) {
       var b = 'egoDetail.' + r;
       var cur = egoTabs[r] || 'awaken';
-      h += '<div class="sub">' + F(r, 'ego.' + r, { list: 'dl-ego-' + r, fill: 'ego', idx: r }) +
+      h += '<div class="sub tactic" data-ego="' + r + '">' + F(r, 'ego.' + r, { list: 'dl-ego-' + r, fill: 'ego', idx: r }) +
         '<details class="detail" data-key="ego-' + r + '"><summary>必要資源・効果</summary><div class="stack">' +
         F('必要資源', b + '.req') +
         '<div class="tabs" role="tablist">' + EGO_TABS.map(function (t) {
@@ -948,20 +948,21 @@
     var h = '<section class="card"><h2>メモ</h2>';
     if (RO) {
       var shown = S.memos.filter(function (m) {
-        return m.text;
+        return m.text || m.title;
       });
       if (!shown.length) {
         return h + '<p class="empty">メモはありません。</p></section>';
       }
       shown.forEach(function (m) {
-        h += '<div class="rich view">' + mdHTML(m.text) + '</div>';
+        h += (m.title ? '<h3 class="memo-title">' + esc(m.title) + '</h3>' : '') + '<div class="rich view">' + mdHTML(m.text) + '</div>';
       });
       return h + '</section>';
     }
     h += '<div class="sortable" data-sort="memos">';
     S.memos.forEach(function (m, i) {
       h += '<div class="sub sortitem" data-sort-idx="' + i + '">' + HANDLE +
-        T('メモ', 'memos.' + i + '.text', 5, 'wide') +
+        '<h3 class="title-row">' + titleInput('memos.' + i + '.title', 'メモ') + '</h3>' +
+        '<label class="f"><textarea data-path="memos.' + i + '.text" rows="5" aria-label="メモ">' + esc(getPath(S, 'memos.' + i + '.text')) + '</textarea></label>' +
         '<div class="rich" data-memoview="' + i + '"></div>' +
         '<div class="actions"><button type="button" class="btn small danger" data-action="del-memo" data-idx="' + i + '">削除</button></div></div>';
     });
@@ -1021,6 +1022,10 @@
     Array.prototype.forEach.call(document.querySelectorAll('[data-tactic]'), function (el) {
       var t = S.equipped.tactics[Number(el.dataset.tactic)];
       el.dataset.sin = t && t.sin ? t.sin : '';
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-ego]'), function (el) {
+      var d = S.egoDetail[el.dataset.ego];
+      el.dataset.sin = d && d.awaken && d.awaken.sin ? d.awaken.sin : '';
     });
     Array.prototype.forEach.call(document.querySelectorAll('[data-memoview]'), function (el) {
       var m = S.memos[Number(el.dataset.memoview)];
