@@ -26,7 +26,7 @@
  
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--bg) url("../image/background.png") center / cover no-repeat fixed;
   color: var(--text);
   font-family: "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", "Meiryo", sans-serif;
   font-size: 1rem;
@@ -78,7 +78,7 @@ small {
   flex-wrap: wrap;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  background: var(--bg);
+  background: rgb(189, 0, 0);
   border-bottom: 0.125rem solid var(--accent);
 }
  
