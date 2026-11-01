@@ -407,11 +407,10 @@
       '<textarea data-path="' + path + '" rows="' + (rows || 3) + '">' + esc(getPath(S, path)) + '</textarea></label>';
   }
 
-  function SEL(label, path, options, o) {
+  function selectEl(path, options, o) {
     o = o || {};
     var v = getPath(S, path);
-    var h = '<label class="f' + (o.cls ? ' ' + o.cls : '') + '"><span>' + label + '</span>' +
-      '<select data-path="' + path + '"' + (o.rerender ? ' data-rerender' : '') + '>';
+    var h = '<select data-path="' + path + '"' + (o.rerender ? ' data-rerender' : '') + '>';
     if (o.blank) {
       h += '<option value=""></option>';
     }
@@ -421,8 +420,15 @@
       var sel = String(v === undefined || v === '' ? (o.def === undefined ? '' : o.def) : v) === String(val);
       h += '<option value="' + esc(val) + '"' + (sel ? ' selected' : '') + '>' + esc(lab) + '</option>';
     });
-    return h + '</select></label>';
+    return h + '</select>';
   }
+
+  function SEL(label, path, options, o) {
+    o = o || {};
+    return '<label class="f' + (o.cls ? ' ' + o.cls : '') + '"><span>' + label + '</span>' + selectEl(path, options, o) + '</label>';
+  }
+
+  var HANDLE = '<span class="handle" title="ドラッグで並べ替え（スマホは長押ししてからドラッグ）" aria-label="並べ替え">☰</span>';
 
   function sinOptions() {
     return SINS;
@@ -517,7 +523,7 @@
   function basicHTML() {
     return '<section class="card" id="sec-basic"><h2>基本</h2><div class="grid">' +
       F('PC名', 'name') + F('PL名', 'player') +
-      F('所属（人格の所属ではありません）', 'affiliation', { list: 'dl-affil', ph: '囚人 / フィクサー など' }) +
+      F('所属', 'affiliation', { list: 'dl-affil', ph: '囚人 / フィクサー など' }) +
       F('年齢', 'profile.age') + F('性別', 'profile.gender') +
       T('経歴・目的', 'profile.background', 3) +
       T('外見的特徴', 'profile.appearance', 2) +
@@ -567,25 +573,27 @@
     var h = '<section class="card" id="sec-tactics"><h2>戦術</h2>';
     for (var i = 0; i < 5; i++) {
       var p = 'equipped.tactics.' + i;
-      h += '<div class="sub"><h3>戦術 ' + i + '</h3><div class="grid">' +
-        F('戦術名', p + '.name') +
-        F('属性', p + '.type', { list: 'dl-type' }) +
-        SEL('罪', p + '.sin', sinOptions(), { blank: true }) +
-        T('ダイス・効果（1行に1つ）', p + '.text', 5) +
+      h += '<div class="sub tactic" data-tactic="' + i + '"><h3>戦術' + i + ' - <span data-tacname="' + i + '"></span></h3><div class="grid">' +
+        F('戦術名', p + '.name', { cls: 'wide' }) +
+        '<div class="f wide"><span>罪悪属性</span><div class="pair">' +
+        selectEl(p + '.sin', sinOptions(), { blank: true }) +
+        '<input type="text" data-path="' + p + '.type" list="dl-type" placeholder="貫通 など" value="' + esc(getPath(S, p + '.type')) + '" autocomplete="off">' +
+        '</div></div>' +
+        T('効果', p + '.text', 5) +
         '</div></div>';
     }
     return h + '</section>';
   }
 
   function itemsHTML() {
-    var h = '<section class="card" id="sec-items"><h2>アイテム</h2>';
+    var h = '<section class="card" id="sec-items"><h2>アイテム</h2><div class="sortable" data-sort="items">';
     S.items.forEach(function (it, i) {
-      h += '<div class="row">' +
+      h += '<div class="row" data-sort-idx="' + i + '">' + HANDLE +
         F('名称', 'items.' + i + '.name', { list: 'dl-item', cls: 'grow' }) +
         F('個数', 'items.' + i + '.count', { type: 'number', cls: 'narrow' }) +
         '<button type="button" class="btn small danger" data-action="del-item" data-idx="' + i + '">削除</button></div>';
     });
-    return h + '<button type="button" class="btn" data-action="add-item">アイテムを追加</button></section>';
+    return h + '</div><button type="button" class="btn" data-action="add-item">アイテムを追加</button></section>';
   }
 
   function egoHTML() {
@@ -634,16 +642,17 @@
     });
     h += '<button type="button" class="btn" data-action="add-owned-p">人格を追加</button>';
 
-    h += '<h3>所持E.G.O</h3>';
+    h += '<h3>所持E.G.O</h3><div class="sortable" data-sort="owned.egos">';
     S.owned.egos.forEach(function (o, i) {
       var p = 'owned.egos.' + i;
-      h += '<div class="sub"><div class="grid">' +
+      h += '<div class="sub" data-sort-idx="' + i + '"><div class="sub-head">' + HANDLE +
+        '<span data-egoname="' + i + '"></span></div><div class="grid">' +
         F('E.G.O名', p + '.name', { list: 'dl-ego-all', cls: 'wide' }) +
         SEL('危険度', p + '.rank', EGO_RANKS, { blank: true }) +
         T('内容（解析E.G.Oなど自作のとき）', p + '.detail', 3) +
         '</div><div class="actions"><button type="button" class="btn small danger" data-action="del-owned-e" data-idx="' + i + '">削除</button></div></div>';
     });
-    h += '<button type="button" class="btn" data-action="add-owned-e">E.G.Oを追加</button>';
+    h += '</div><button type="button" class="btn" data-action="add-owned-e">E.G.Oを追加</button>';
 
     h += '<h3>所持サポートパッシブ</h3>';
     S.owned.support.forEach(function (o, i) {
@@ -743,6 +752,18 @@
       if (o) {
         el.textContent = o.name || '（名称未入力）';
       }
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-tacname]'), function (el) {
+      var t = S.equipped.tactics[Number(el.dataset.tacname)];
+      el.textContent = t && t.name ? t.name : '（戦術名）';
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-tactic]'), function (el) {
+      var t = S.equipped.tactics[Number(el.dataset.tactic)];
+      el.dataset.sin = t && t.sin ? t.sin : '';
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-egoname]'), function (el) {
+      var o = S.owned.egos[Number(el.dataset.egoname)];
+      el.textContent = o && o.name ? o.name : '（E.G.O名）';
     });
     var cs = document.getElementById('ct-summary');
     if (cs) {
@@ -1159,6 +1180,160 @@
     var el = ev.target.closest && ev.target.closest('[data-action]');
     if (el && actions[el.dataset.action]) {
       actions[el.dataset.action](el);
+    }
+  });
+
+  var pending = null;
+  var drag = null;
+  var scrollRaf = 0;
+
+  function sortOrder(box) {
+    return Array.prototype.filter.call(box.children, function (c) {
+      return c.dataset.sortIdx !== undefined;
+    }).map(function (c) {
+      return Number(c.dataset.sortIdx);
+    });
+  }
+
+  function dragMove(y) {
+    var sibs = Array.prototype.filter.call(drag.box.children, function (c) {
+      return c !== drag.row && c.dataset.sortIdx !== undefined;
+    });
+    var before = null;
+    for (var i = 0; i < sibs.length; i++) {
+      var r = sibs[i].getBoundingClientRect();
+      if (y < r.top + r.height / 2) {
+        before = sibs[i];
+        break;
+      }
+    }
+    if (before) {
+      if (drag.row.nextElementSibling !== before) {
+        drag.box.insertBefore(drag.row, before);
+      }
+    } else if (drag.box.lastElementChild !== drag.row) {
+      drag.box.appendChild(drag.row);
+    }
+  }
+
+  function autoScroll() {
+    if (!drag) {
+      return;
+    }
+    var step = 0;
+    if (drag.y < 70) {
+      step = -14;
+    } else if (drag.y > window.innerHeight - 70) {
+      step = 14;
+    }
+    if (step) {
+      window.scrollBy(0, step);
+      dragMove(drag.y);
+    }
+    scrollRaf = requestAnimationFrame(autoScroll);
+  }
+
+  function startDrag(h, row, box, id, y) {
+    var active = document.activeElement;
+    if (active && active !== document.body && active.blur) {
+      active.blur();
+    }
+    if (!document.body.contains(row)) {
+      return;
+    }
+    drag = { handle: h, row: row, box: box, id: id, y: y };
+    row.classList.add('dragging');
+    document.body.classList.add('is-dragging');
+    try {
+      h.setPointerCapture(id);
+    } catch (e) {
+      drag.captured = false;
+    }
+    scrollRaf = requestAnimationFrame(autoScroll);
+  }
+
+  function endDrag() {
+    if (!drag) {
+      return;
+    }
+    var d = drag;
+    drag = null;
+    cancelAnimationFrame(scrollRaf);
+    d.row.classList.remove('dragging');
+    document.body.classList.remove('is-dragging');
+    var order = sortOrder(d.box);
+    var arr = getPath(S, d.box.dataset.sort);
+    var changed = order.some(function (v, i) {
+      return v !== i;
+    });
+    if (changed && arr) {
+      var next = order.map(function (i) {
+        return arr[i];
+      });
+      arr.length = 0;
+      next.forEach(function (x) {
+        arr.push(x);
+      });
+      rerender();
+    }
+  }
+
+  app.addEventListener('pointerdown', function (ev) {
+    var h = ev.target.closest && ev.target.closest('.handle');
+    if (!h || RO) {
+      return;
+    }
+    var row = h.closest('[data-sort-idx]');
+    var box = row && row.parentElement;
+    if (!box || !box.dataset.sort) {
+      return;
+    }
+    if (ev.pointerType === 'touch') {
+      pending = {
+        sx: ev.clientX,
+        sy: ev.clientY,
+        timer: setTimeout(function () {
+          pending = null;
+          startDrag(h, row, box, ev.pointerId, ev.clientY);
+          if (navigator.vibrate) {
+            navigator.vibrate(15);
+          }
+        }, 350)
+      };
+    } else {
+      ev.preventDefault();
+      startDrag(h, row, box, ev.pointerId, ev.clientY);
+    }
+  });
+
+  document.addEventListener('pointermove', function (ev) {
+    if (pending) {
+      if (Math.abs(ev.clientX - pending.sx) > 8 || Math.abs(ev.clientY - pending.sy) > 8) {
+        clearTimeout(pending.timer);
+        pending = null;
+      }
+      return;
+    }
+    if (drag && ev.pointerId === drag.id) {
+      drag.y = ev.clientY;
+      dragMove(ev.clientY);
+    }
+  });
+
+  function stopPointer() {
+    if (pending) {
+      clearTimeout(pending.timer);
+      pending = null;
+    }
+    endDrag();
+  }
+
+  document.addEventListener('pointerup', stopPointer);
+  document.addEventListener('pointercancel', stopPointer);
+
+  app.addEventListener('contextmenu', function (ev) {
+    if (ev.target.closest && ev.target.closest('.handle')) {
+      ev.preventDefault();
     }
   });
 
