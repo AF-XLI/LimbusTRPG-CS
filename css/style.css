@@ -55,8 +55,8 @@ h1 {
  
 h2 {
   margin: 0 0 0.75rem;
-  padding-block-end: 0.5rem;
-  border-bottom: 0.188rem solid var(--border);
+  padding-block-end: 0.25rem;
+  border-bottom: 0.125rem solid var(--border);
   color: var(--accent);
   font-size: 1.125rem;
   letter-spacing: 0.05rem;
