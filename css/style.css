@@ -145,6 +145,10 @@ small {
   border-top: 0.125rem solid var(--accent);
 }
  
+.bottombar.ro {
+  justify-content: flex-end;
+}
+ 
 .bottombar .btn {
   flex: 1 1 0;
   max-width: 12rem;
@@ -242,6 +246,15 @@ small {
  
 .tactic[data-sin="嫉妬"] {
   --sin-color: var(--sin-envy);
+}
+ 
+.extra {
+  margin-inline-start: 1.5rem;
+}
+ 
+.extra-add {
+  margin-block-start: 0;
+  margin-block-end: 0.75rem;
 }
  
 .title-row {
