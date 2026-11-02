@@ -731,10 +731,10 @@
   }
 
   function basicHTML() {
-    return '<section class="card"><h2>基本</h2><div class="grid">' +
-      F('PC名', 'name') + F('PL名', 'player') +
-      F('年齢', 'profile.age') + F('性別', 'profile.gender') +
-      F('所属', 'affiliation', { list: 'dl-affil' }) +
+    return '<section class="card"><h2>基本情報</h2><div class="basic">' +
+      F('PC名', 'name', { cls: 'b-name' }) + F('所属', 'affiliation', { list: 'dl-affil', cls: 'b-aff' }) +
+      F('PL名', 'player', { cls: 'b-pl' }) + F('性別', 'profile.gender', { cls: 'b-gen' }) +
+      F('年齢', 'profile.age', { cls: 'b-age' }) +
       '</div></section>';
   }
 
