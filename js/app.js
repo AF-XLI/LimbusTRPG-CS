@@ -144,6 +144,10 @@
     return { name: '', type: '', sin: '', text: '' };
   }
 
+  function emptyExtra() {
+    return { parent: 0, name: '', type: '', sin: '', text: '' };
+  }
+
   function emptyPassive() {
     return { name: '', cond: '', effect: '' };
   }
@@ -180,6 +184,7 @@
       bullets: '',
       passive: emptyPassive(),
       tactics: [0, 1, 2, 3, 4].map(emptyTactic),
+      extras: [],
       notes: ''
     };
   }
@@ -242,6 +247,7 @@
   function normEquipped(e) {
     var m = merge(emptyEquipped(), isObj(e) ? e : {});
     m.tactics = fixList(m.tactics, emptyTactic, 5).slice(0, 5);
+    m.extras = fixList(m.extras, emptyExtra);
     return m;
   }
 
@@ -714,7 +720,7 @@
 
   function bottombarHTML() {
     if (RO) {
-      return '<nav class="bottombar"><button type="button" class="btn" data-action="ccfolia">駒出力</button></nav>';
+      return '<nav class="bottombar ro"><button type="button" class="btn" data-action="ccfolia">駒出力</button></nav>';
     }
     return '<nav class="bottombar">' +
       '<a class="btn" href="#/">一覧</a>' +
@@ -780,15 +786,44 @@
     return h + '</section>';
   }
 
+  function extraCount(i) {
+    return S.equipped.extras.filter(function (x) {
+      return Number(x.parent) === i;
+    }).length;
+  }
+
+  function extraLabel(k) {
+    var par = Number(S.equipped.extras[k].parent);
+    var n = 2;
+    for (var q = 0; q < k; q++) {
+      if (Number(S.equipped.extras[q].parent) === par) {
+        n++;
+      }
+    }
+    return par + '-' + n;
+  }
+
   function tacticsHTML() {
     var h = '<section class="card"><h2>戦術</h2>';
     for (var i = 0; i < 5; i++) {
       var p = 'equipped.tactics.' + i;
-      h += '<div class="sub tactic" data-tactic="' + i + '"><h3 class="title-row"><span>戦術' + i + ' -</span>' +
+      h += '<div class="sub tactic" data-tactic="' + i + '"><h3 class="title-row"><span>戦術' + i + (extraCount(i) ? '-1' : '') + ' -</span>' +
         titleInput(p + '.name', '戦術名') + '</h3><div class="grid">' +
         sinTypeHTML(p) +
         T('効果', p + '.text', 5) +
         '</div></div>';
+      S.equipped.extras.forEach(function (x, k) {
+        if (Number(x.parent) !== i) {
+          return;
+        }
+        var q = 'equipped.extras.' + k;
+        h += '<div class="sub tactic extra" data-extra="' + k + '"><h3 class="title-row"><span>戦術' + extraLabel(k) + ' -</span>' +
+          titleInput(q + '.name', '戦術名') + '</h3><div class="grid">' +
+          sinTypeHTML(q) +
+          T('効果', q + '.text', 5) +
+          '</div><div class="actions"><button type="button" class="btn small danger" data-action="del-extra" data-idx="' + k + '">削除</button></div></div>';
+      });
+      h += '<div class="actions extra-add"><button type="button" class="btn small" data-action="add-extra" data-parent="' + i + '">戦術' + i + 'の追加戦術を追加</button></div>';
     }
     return h + '</section>';
   }
@@ -1023,6 +1058,10 @@
       var t = S.equipped.tactics[Number(el.dataset.tactic)];
       el.dataset.sin = t && t.sin ? t.sin : '';
     });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-extra]'), function (el) {
+      var t = S.equipped.extras[Number(el.dataset.extra)];
+      el.dataset.sin = t && t.sin ? t.sin : '';
+    });
     Array.prototype.forEach.call(document.querySelectorAll('[data-ego]'), function (el) {
       var d = S.egoDetail[el.dataset.ego];
       el.dataset.sin = d && d.awaken && d.awaken.sin ? d.awaken.sin : '';
@@ -1058,7 +1097,7 @@
     ids.forEach(function (id) {
       var s = store.sheets[id];
       h += '<li class="card"><a class="char-main" href="#/edit/' + esc(id) + '"><strong>' + esc(s.name || '名称未設定') + '</strong>' +
-        '<span>' + esc([s.affiliation, s.player && 'PL：' + s.player, s.equipped && s.equipped.name].filter(Boolean).join(' ／ ')) + '</span></a>' +
+        '<span>' + esc([s.affiliation, s.equipped && s.equipped.name].filter(Boolean).join(' ／ ')) + '</span></a>' +
         '<div class="actions"><button type="button" class="btn small" data-action="dup" data-id="' + esc(id) + '">複製</button>' +
         '<button type="button" class="btn small danger" data-action="del" data-id="' + esc(id) + '">削除</button></div></li>';
     });
@@ -1119,6 +1158,9 @@
           e.tactics[i] = merge(emptyTactic(), clone(t));
         }
       });
+      (p.extras || []).forEach(function (x) {
+        e.extras.push(merge(emptyExtra(), clone(x)));
+      });
       e.notes = p.notes || '';
       S.equipped = e;
     }
@@ -1127,13 +1169,30 @@
     }
   }
 
+  function tacticList(e) {
+    var list = [];
+    e.tactics.forEach(function (t, i) {
+      list.push({ label: String(i) + (e.extras.some(function (x) {
+        return Number(x.parent) === i;
+      }) ? '-1' : ''), t: t, i: i });
+      var n = 2;
+      e.extras.forEach(function (x) {
+        if (Number(x.parent) === i) {
+          list.push({ label: i + '-' + n, t: x, i: i });
+          n++;
+        }
+      });
+    });
+    return list;
+  }
+
   function tacticLines(e) {
     var out = [];
-    e.tactics.forEach(function (t, i) {
-      (t.text || '').split('\n').forEach(function (line) {
+    tacticList(e).forEach(function (it) {
+      (it.t.text || '').split('\n').forEach(function (line) {
         var m = line.match(DICE_LINE);
         if (m) {
-          out.push(m[1] + ' 【' + i + '：' + (t.name || '戦術' + i) + '】' + (m[2] ? m[2] : ''));
+          out.push(m[1] + ' 【' + it.label + '：' + (it.t.name || '戦術' + it.label) + '】' + (m[2] ? m[2] : ''));
         }
       });
     });
@@ -1176,9 +1235,10 @@
     if (sheet.death && sheet.death.name && hasSpecial(sheet, 'deadslot')) {
       memo.push('【死亡後】' + sheet.death.name + '（' + sheet.death.cond + '）' + sheet.death.effect);
     }
-    e.tactics.forEach(function (tc, i) {
+    tacticList(e).forEach(function (it) {
+      var tc = it.t;
       if (tc.name) {
-        memo.push('【戦術' + i + '】' + tc.name + ' ' + tc.type + (tc.sin ? '：' + tc.sin : '') + '\n' + (tc.text || ''));
+        memo.push('【戦術' + it.label + '】' + tc.name + ' ' + tc.type + (tc.sin ? '：' + tc.sin : '') + '\n' + (tc.text || ''));
       }
     });
     var commands = ['2b4 【戦術選択】'];
@@ -1310,7 +1370,7 @@
       });
     },
     'ccfolia': function () {
-      copyText(JSON.stringify(ccfoliaData(S)), 'ココフォリア用コマ');
+      copyText(JSON.stringify(ccfoliaData(S)), 'ココフォリア用駒');
     },
     'add-item': function () {
       S.items.push({ name: '', count: '1', desc: '' });
@@ -1318,6 +1378,15 @@
     },
     'del-item': function (el) {
       removeAt('items', el);
+    },
+    'add-extra': function (el) {
+      var x = emptyExtra();
+      x.parent = Number(el.dataset.parent);
+      S.equipped.extras.push(x);
+      rerender();
+    },
+    'del-extra': function (el) {
+      removeAt('equipped.extras', el);
     },
     'add-memo': function () {
       S.memos.push(emptyMemo());
@@ -1492,6 +1561,9 @@
   document.addEventListener('click', function (ev) {
     var el = ev.target.closest && ev.target.closest('[data-action]');
     if (el && actions[el.dataset.action]) {
+      if (/^del-/.test(el.dataset.action) && !window.confirm('削除します。よろしいですか?')) {
+        return;
+      }
       actions[el.dataset.action](el);
     }
   });
