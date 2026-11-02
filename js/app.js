@@ -823,7 +823,7 @@
           T('効果', q + '.text', 5) +
           '</div><div class="actions"><button type="button" class="btn small danger" data-action="del-extra" data-idx="' + k + '">削除</button></div></div>';
       });
-      h += '<div class="actions extra-add"><button type="button" class="btn small" data-action="add-extra" data-parent="' + i + '">戦術' + i + 'の追加戦術を追加</button></div>';
+      h += '<div class="actions extra-add"><button type="button" class="btn small" data-action="add-extra" data-parent="' + i + '">戦術' + i + '-' + (2 + extraCount(i)) + 'を追加</button></div>';
     }
     return h + '</section>';
   }
@@ -1344,7 +1344,7 @@
     },
     'del': function (el) {
       var s = store.sheets[el.dataset.id];
-      if (window.confirm('「' + (s.name || '名称未設定') + '」を削除します。元に戻せません。よろしいですか?')) {
+      if (window.confirm('「' + (s.name || '名称未設定') + '」を削除します。元に戻せません。よろしいですか？')) {
         delete store.sheets[el.dataset.id];
         saveStore();
         renderList();
@@ -1564,7 +1564,7 @@
   document.addEventListener('click', function (ev) {
     var el = ev.target.closest && ev.target.closest('[data-action]');
     if (el && actions[el.dataset.action]) {
-      if (/^del-/.test(el.dataset.action) && !window.confirm('削除します。よろしいですか?')) {
+      if (/^del-/.test(el.dataset.action) && !window.confirm('削除します。よろしいですか？')) {
         return;
       }
       actions[el.dataset.action](el);
