@@ -743,8 +743,8 @@
     return '<section class="card"><h2>装備人格・ステータス</h2><div class="stack">' +
       F('装備する人格', 'equipped.name', { list: 'dl-persona', fill: 'persona', ph: '名前を入力すると候補が出ます' }) +
       '<div class="stats">' +
-      F('HP（基礎値）', 'equipped.hp', { type: 'number', cls: 's-hp' }) +
-      F('SAN（基礎値）', 'equipped.san', { type: 'number', cls: 's-san' }) +
+      F('基礎HP', 'equipped.hp', { type: 'number', cls: 's-hp' }) +
+      F('基礎SAN', 'equipped.san', { type: 'number', cls: 's-san' }) +
       F('斬撃', 'equipped.resist.slash', { list: 'dl-resist', cls: 's-sla' }) +
       F('速度', 'equipped.speed', { cls: 's-spd' }) +
       F('貫通', 'equipped.resist.pierce', { list: 'dl-resist', cls: 's-pie' }) +
@@ -1003,8 +1003,8 @@
     S.memos.forEach(function (m, i) {
       h += '<div class="sub sortitem" data-sort-idx="' + i + '">' + HANDLE +
         '<h3 class="title-row">' + titleInput('memos.' + i + '.title', 'メモ') + '</h3>' +
-        '<label class="f"><textarea data-path="memos.' + i + '.text" rows="5" aria-label="メモ">' + esc(getPath(S, 'memos.' + i + '.text')) + '</textarea></label>' +
         '<div class="rich" data-memoview="' + i + '"></div>' +
+        '<label class="f"><textarea data-path="memos.' + i + '.text" rows="5" aria-label="メモ">' + esc(getPath(S, 'memos.' + i + '.text')) + '</textarea></label>' +
         '<div class="actions"><button type="button" class="btn small danger" data-action="del-memo" data-idx="' + i + '">削除</button></div></div>';
     });
     return h + '</div><button type="button" class="btn" data-action="add-memo">メモを追加</button></section>';
