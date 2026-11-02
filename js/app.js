@@ -742,6 +742,7 @@
     var e = S.equipped;
     return '<section class="card"><h2>装備人格・ステータス</h2><div class="stack">' +
       F('装備する人格', 'equipped.name', { list: 'dl-persona', fill: 'persona', ph: '名前を入力すると候補が出ます' }) +
+      '<p class="derived" id="derived"></p>' +
       '<div class="stats">' +
       F('基礎HP', 'equipped.hp', { type: 'number', cls: 's-hp' }) +
       F('基礎SAN', 'equipped.san', { type: 'number', cls: 's-san' }) +
@@ -752,7 +753,6 @@
       F('打撃', 'equipped.resist.blunt', { list: 'dl-resist', cls: 's-blu' }) +
       F('精神', 'spirit', { list: 'dl-spirit', fill: 'spirit', cls: 's-spi' }) +
       '</div></div><p class="hint" id="spirit-hint">' + esc(spiritHint()) + '</p>' +
-      '<p class="derived" id="derived"></p>' +
       (e.notes !== undefined ? T('固有の効果・メモ', 'equipped.notes', 3) : '') +
       '</section>';
   }
