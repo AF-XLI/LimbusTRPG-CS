@@ -56,7 +56,7 @@ h1 {
 h2 {
   margin: 0 0 0.75rem;
   padding-block-end: 0.5rem;
-  border-bottom: 0.063rem solid var(--border);
+  border-bottom: 0.188rem solid var(--border);
   color: var(--accent);
   font-size: 1.125rem;
   letter-spacing: 0.05rem;
@@ -305,6 +305,35 @@ small {
 .stack {
   display: grid;
   gap: 0.75rem;
+}
+ 
+.basic {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-areas:
+    "name name aff pl"
+    "gen age . .";
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+ 
+.b-name {
+  grid-area: name;
+}
+ 
+.b-aff {
+  grid-area: aff;
+}
+ 
+.b-pl {
+  grid-area: pl;
+}
+ 
+.b-gen {
+  grid-area: gen;
+}
+ 
+.b-age {
+  grid-area: age;
 }
  
 .stats {
@@ -786,6 +815,14 @@ dialog::backdrop {
  
   .grid {
     grid-template-columns: 1fr 1fr;
+  }
+ 
+  .basic {
+    grid-template-areas:
+      "name name"
+      "aff pl"
+      "gen age";
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
  
   .stats {
