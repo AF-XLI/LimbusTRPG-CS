@@ -1750,26 +1750,31 @@
   }
 
   var tip = null;
+  var tipStack = [];
+  var tipAnchor = null;
+  var tipPinned = false;
+  var tipTimer = null;
 
   function hideTip() {
+    clearTimeout(tipTimer);
     if (tip) {
       tip.remove();
       tip = null;
     }
+    tipStack = [];
+    tipAnchor = null;
+    tipPinned = false;
   }
 
-  function showTip(el) {
-    var b = kwMap && kwMap[(el.dataset.kw || '').replace(/\s+/g, '')];
-    if (!b) {
+  function kwOf(name) {
+    return kwMap && kwMap[(name || '').replace(/\s+/g, '')];
+  }
+
+  function placeTip() {
+    if (!tip || !tipAnchor) {
       return;
     }
-    hideTip();
-    tip = document.createElement('div');
-    tip.className = 'kw-tip';
-    tip.setAttribute('role', 'tooltip');
-    tip.innerHTML = '<div class="kw-tip-head"><strong>' + esc(b.name) + '</strong><small>' + esc(b.kind) + '</small></div><div>' + hlText(esc(b.effect)) + '</div>';
-    document.body.appendChild(tip);
-    var r = el.getBoundingClientRect();
+    var r = tipAnchor.getBoundingClientRect();
     var w = tip.offsetWidth;
     var h = tip.offsetHeight;
     var left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left));
@@ -1781,29 +1786,90 @@
     tip.style.top = top + 'px';
   }
 
+  function renderTip() {
+    var b = kwOf(tipStack[tipStack.length - 1]);
+    if (!b || !tip) {
+      return;
+    }
+    tip.innerHTML = '<div class="kw-tip-head"><strong>' + esc(b.name) + '</strong><small>' + esc(b.kind) + '</small>' +
+      (tipStack.length > 1 ? '<button type="button" class="kw-back">← 戻る</button>' : '') +
+      '</div><div>' + hlText(esc(b.effect)) + '</div>';
+    placeTip();
+  }
+
+  function showTip(el, pin) {
+    var b = kwOf(el.dataset.kw);
+    if (!b) {
+      return;
+    }
+    hideTip();
+    tip = document.createElement('div');
+    tip.className = 'kw-tip';
+    tip.setAttribute('role', 'tooltip');
+    tip.addEventListener('mouseenter', function () {
+      clearTimeout(tipTimer);
+    });
+    tip.addEventListener('mouseleave', function () {
+      if (!tipPinned) {
+        tipTimer = setTimeout(hideTip, 250);
+      }
+    });
+    document.body.appendChild(tip);
+    tipAnchor = el;
+    tipPinned = !!pin;
+    tipStack = [b.name];
+    renderTip();
+  }
+
+  function canHover() {
+    return window.matchMedia('(hover: hover)').matches;
+  }
+
   app.addEventListener('mouseover', function (ev) {
     var el = ev.target.closest && ev.target.closest('.kw');
-    if (el && RO && window.matchMedia('(hover: hover)').matches) {
-      showTip(el);
+    if (el && RO && canHover() && !tipPinned) {
+      clearTimeout(tipTimer);
+      showTip(el, false);
     }
   });
 
   app.addEventListener('mouseout', function (ev) {
-    if (ev.target.closest && ev.target.closest('.kw') && window.matchMedia('(hover: hover)').matches) {
-      hideTip();
+    if (ev.target.closest && ev.target.closest('.kw') && canHover() && !tipPinned) {
+      tipTimer = setTimeout(hideTip, 250);
     }
   });
 
   document.addEventListener('click', function (ev) {
-    var el = ev.target.closest && ev.target.closest('.kw');
+    var t = ev.target;
+    if (!t.closest) {
+      return;
+    }
+    if (tip && tip.contains(t)) {
+      if (t.closest('.kw-back')) {
+        tipStack.pop();
+        renderTip();
+      } else if (t.closest('.kw')) {
+        tipStack.push(t.closest('.kw').dataset.kw);
+        tipPinned = true;
+        renderTip();
+      }
+      return;
+    }
+    var el = t.closest('.kw');
     if (el && RO) {
-      showTip(el);
+      showTip(el, true);
     } else {
       hideTip();
     }
   });
 
-  window.addEventListener('scroll', hideTip, { passive: true });
+  window.addEventListener('scroll', function () {
+    if (tip && !tipPinned) {
+      hideTip();
+    } else {
+      placeTip();
+    }
+  }, { passive: true });
 
   app.addEventListener('keydown', function (ev) {
     var el = ev.target;
