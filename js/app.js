@@ -883,7 +883,7 @@
     var s = D.spirits.filter(function (x) {
       return x.name === S.spirit;
     })[0];
-    return s ? '士気低下：' + s.morale + ' ／ 混乱：' + s.panic : '';
+    return s ? (s.always ? '常時：' + s.always + ' ／ ' : '') + '士気低下：' + s.morale + ' ／ 混乱：' + s.panic : '';
   }
 
   function sinTypeHTML(p) {
