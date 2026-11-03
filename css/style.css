@@ -810,12 +810,19 @@ dialog::backdrop {
 }
  
 @media only screen and (max-width: 640px) {
+  .tabs {
+    gap: 0.125rem;
+  }
+ 
   .tab {
-    padding-inline: 0.5rem;
+    flex: 1 1 auto;
+    padding-inline: 0.25rem;
+    text-align: center;
+    white-space: nowrap;
   }
  
   .tabs.main .tab {
-    padding: 0.5rem 0.75rem;
+    padding: 0.5rem 0.25rem;
   }
  
   #app {
