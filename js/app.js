@@ -1036,8 +1036,8 @@
     return RO && !list.length ? '<p class="empty">なし</p>' : '';
   }
 
-  function fold(key, title, body, big) {
-    return '<details class="detail fold' + (big ? ' big' : '') + '" data-key="' + key + '"><summary>' + title + '</summary>' + body + '</details>';
+  function fold(key, title, body) {
+    return '<details class="detail fold" data-key="' + key + '"><summary>' + title + '</summary>' + body + '</details>';
   }
 
   function itemsHTML() {
@@ -1152,23 +1152,24 @@
   }
 
   function scenarioHTML() {
-    var h = '';
+    var h = '<section class="card"><h2>通過したシナリオ</h2>';
     S.scenarios.forEach(function (sc, i) {
       var p = 'scenarios.' + i;
-      h += '<div class="sub"><div class="stack">' +
-        F('シナリオ名', p + '.title') +
-        '<div class="f"><span>日程</span><div class="range">' +
-        '<input type="date" data-path="' + p + '.dateStart" value="' + esc(sc.dateStart) + '">' +
-        '<i>〜</i>' +
-        '<input type="date" data-path="' + p + '.dateEnd" value="' + esc(sc.dateEnd) + '"></div></div>' +
-        F('KP', p + '.kp') +
-        T('メモ', p + '.memo', 3) +
-        '</div><div class="actions"><button type="button" class="btn small danger" data-action="del-scenario" data-idx="' + i + '">削除</button></div></div>';
+      h += '<div class="sub">' + F('シナリオ名', p + '.title') +
+        fold('scenario-' + i, '日程・GM・メモ', '<div class="stack">' +
+          '<div class="f"><span>日程</span><div class="range">' +
+          '<input type="date" data-path="' + p + '.dateStart" value="' + esc(sc.dateStart) + '">' +
+          '<i>〜</i>' +
+          '<input type="date" data-path="' + p + '.dateEnd" value="' + esc(sc.dateEnd) + '"></div></div>' +
+          F('GM', p + '.kp') +
+          T('メモ', p + '.memo', 3) +
+          '</div><div class="actions"><button type="button" class="btn small danger" data-action="del-scenario" data-idx="' + i + '">削除</button></div>') +
+        '</div>';
     });
     if (!S.scenarios.length) {
       h += '<p class="empty">まだ記録がありません。</p>';
     }
-    return '<section class="card">' + fold('scenarios', '通過したシナリオ', h + '<button type="button" class="btn" data-action="add-scenario">シナリオを追加</button>', true) + '</section>';
+    return h + '<button type="button" class="btn" data-action="add-scenario">シナリオを追加</button></section>';
   }
 
   function memoHTML() {
