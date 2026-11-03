@@ -20,7 +20,6 @@
     sync00: '同期化人格 ランク00',
     sync000: '同期化人格 ランク000'
   };
-  var CT_KINDS = ['special', 'sync0', 'sync00', 'sync000'];
   var TYPES = ['斬撃', '貫通', '打撃', '防御', '回避', '反撃', '斬撃反撃', '貫通反撃', '打撃反撃'];
   var RESISTS = ['弱点', '普通', '抵抗'];
   var AFFILIATIONS = ['LCB', 'フィクサー'];
@@ -1037,8 +1036,12 @@
     return RO && !list.length ? '<p class="empty">なし</p>' : '';
   }
 
+  function fold(key, title, body, big) {
+    return '<details class="detail fold' + (big ? ' big' : '') + '" data-key="' + key + '"><summary>' + title + '</summary>' + body + '</details>';
+  }
+
   function itemsHTML() {
-    var h = '<h3>所持アイテム</h3><div class="sortable" data-sort="items">';
+    var h = '<div class="sortable" data-sort="items">';
     S.items.forEach(function (it, i) {
       h += '<div class="sub sortitem" data-sort-idx="' + i + '">' + HANDLE +
         '<div class="row">' +
@@ -1048,7 +1051,7 @@
         T('説明', 'items.' + i + '.desc', 2) +
         '<div class="actions"><button type="button" class="btn small danger" data-action="del-item" data-idx="' + i + '">削除</button></div></div>';
     });
-    return h + '</div>' + noneHTML(S.items) + '<button type="button" class="btn" data-action="add-item">アイテムを追加</button>';
+    return fold('own-items', '所持アイテム', h + '</div>' + noneHTML(S.items) + '<button type="button" class="btn" data-action="add-item">アイテムを追加</button>');
   }
 
   function egoBlockHTML(r) {
@@ -1118,58 +1121,38 @@
 
     h += itemsHTML();
 
-    h += '<h3>所持人格</h3><div class="sortable" data-sort="owned.personalities">';
+    var b = '<div class="sortable" data-sort="owned.personalities">';
     S.owned.personalities.forEach(function (o, i) {
-      h += ownedPersonaRow(o, i);
+      b += ownedPersonaRow(o, i);
     });
-    h += '</div>' + noneHTML(S.owned.personalities) + '<button type="button" class="btn" data-action="add-owned-p">人格を追加</button>';
+    h += fold('own-personas', '所持人格', b + '</div>' + noneHTML(S.owned.personalities) + '<button type="button" class="btn" data-action="add-owned-p">人格を追加</button>');
 
-    h += '<h3>所持E.G.O</h3><div class="sortable" data-sort="owned.egos">';
+    b = '<div class="sortable" data-sort="owned.egos">';
     S.owned.egos.forEach(function (o, i) {
       var p = 'owned.egos.' + i;
-      h += '<div class="sub sortitem" data-sort-idx="' + i + '">' + HANDLE +
+      b += '<div class="sub sortitem" data-sort-idx="' + i + '">' + HANDLE +
         '<h3 class="title-row">' + titleInput(p + '.name', 'E.G.O名', { list: 'dl-ego-all' }) + '</h3><div class="grid">' +
         SEL('危険度', p + '.rank', EGO_RANKS, { blank: true }) +
         T('内容（解析E.G.Oなど自作のとき）', p + '.detail', 3) +
         '</div><div class="actions"><button type="button" class="btn small danger" data-action="del-owned-e" data-idx="' + i + '">削除</button></div></div>';
     });
-    h += '</div>' + noneHTML(S.owned.egos) + '<button type="button" class="btn" data-action="add-owned-e">E.G.Oを追加</button>';
+    h += fold('own-egos', '所持E.G.O', b + '</div>' + noneHTML(S.owned.egos) + '<button type="button" class="btn" data-action="add-owned-e">E.G.Oを追加</button>');
 
-    h += '<h3>所持サポートパッシブ</h3>' + ownedNameRows('support', S.owned.support, 'dl-support', 'del-owned-sp') +
-      '<button type="button" class="btn" data-action="add-owned-sp">サポートパッシブを追加</button>';
+    h += fold('own-support', '所持サポートパッシブ', ownedNameRows('support', S.owned.support, 'dl-support', 'del-owned-sp') +
+      '<button type="button" class="btn" data-action="add-owned-sp">サポートパッシブを追加</button>');
 
     if (S.owned.death.length || anyDeadslot(S)) {
-      h += '<h3>所持死亡後パッシブ</h3>' + ownedNameRows('death', S.owned.death, 'dl-death', 'del-owned-d') +
-        '<button type="button" class="btn" data-action="add-owned-d">死亡後パッシブを追加</button>';
+      h += fold('own-death', '所持死亡後パッシブ', ownedNameRows('death', S.owned.death, 'dl-death', 'del-owned-d') +
+        '<button type="button" class="btn" data-action="add-owned-d">死亡後パッシブを追加</button>');
     }
 
-    h += '<h3>所持精神</h3>' + ownedNameRows('spirits', S.owned.spirits, 'dl-spirit', 'del-owned-s');
-    return h + '<button type="button" class="btn" data-action="add-owned-s">精神を追加</button></section>';
-  }
-
-  function ctHTML() {
-    var h = '<section class="card"><h2>クールタイム（特異人格・同期化人格）</h2>' +
-      '<p class="hint">所持人格の種別が「特異人格」「同期化人格」のものが表示されます。使用後に残りセッション数を記録します。</p>' +
-      '<p class="derived" id="ct-summary"></p>';
-    var any = false;
-    S.owned.personalities.forEach(function (o, i) {
-      if (CT_KINDS.indexOf(o.kind) < 0) {
-        return;
-      }
-      any = true;
-      var p = 'owned.personalities.' + i;
-      h += '<div class="row"><div class="ct-name" data-ctname="' + i + '">' + esc(o.name || '（名称未入力）') + '</div>' +
-        F('残りCT', p + '.ct', { type: 'number', cls: 'narrow' }) +
-        F('メモ', p + '.ctMemo', { cls: 'grow' }) + '</div>';
-    });
-    if (!any) {
-      h += '<p class="empty">該当する人格がありません。</p>';
-    }
+    h += fold('own-spirits', '所持精神', ownedNameRows('spirits', S.owned.spirits, 'dl-spirit', 'del-owned-s') +
+      '<button type="button" class="btn" data-action="add-owned-s">精神を追加</button>');
     return h + '</section>';
   }
 
   function scenarioHTML() {
-    var h = '<section class="card"><h2>通過したシナリオ</h2>';
+    var h = '';
     S.scenarios.forEach(function (sc, i) {
       var p = 'scenarios.' + i;
       h += '<div class="sub"><div class="stack">' +
@@ -1185,7 +1168,7 @@
     if (!S.scenarios.length) {
       h += '<p class="empty">まだ記録がありません。</p>';
     }
-    return h + '<button type="button" class="btn" data-action="add-scenario">シナリオを追加</button></section>';
+    return '<section class="card">' + fold('scenarios', '通過したシナリオ', h + '<button type="button" class="btn" data-action="add-scenario">シナリオを追加</button>', true) + '</section>';
   }
 
   function memoHTML() {
@@ -1222,7 +1205,7 @@
       (RO ? '<div class="banner"><p>[閲覧専用] 共有されたキャラシートです。</p></div>' : '') +
       '<fieldset class="sheet"' + (RO ? ' disabled' : '') + '>' +
       basicHTML() + statusHTML() + mainTabsHTML() + supportHTML() +
-      ownedHTML() + ctHTML() + scenarioHTML() + memoHTML() +
+      ownedHTML() + scenarioHTML() + memoHTML() +
       '</fieldset>' + bottombarHTML() + datalistsHTML();
     opened.forEach(function (k) {
       var d = app.querySelector('details[data-key="' + k + '"]');
@@ -1257,12 +1240,6 @@
         el.textContent = '（HP+' + b.hp + ' / SAN+' + b.san + '）';
       }
     });
-    Array.prototype.forEach.call(document.querySelectorAll('[data-ctname]'), function (el) {
-      var o = S.owned.personalities[Number(el.dataset.ctname)];
-      if (o) {
-        el.textContent = o.name || '（名称未入力）';
-      }
-    });
     Array.prototype.forEach.call(document.querySelectorAll('[data-tactic]'), function (el) {
       var t = S.equipped.tactics[Number(el.dataset.tactic)];
       el.dataset.sin = t && t.sin ? t.sin : '';
@@ -1279,15 +1256,6 @@
       var m = S.memos[Number(el.dataset.memoview)];
       el.innerHTML = m ? mdHTML(m.text) : '';
     });
-    var cs = document.getElementById('ct-summary');
-    if (cs) {
-      var list = S.owned.personalities.filter(function (o) {
-        return CT_KINDS.indexOf(o.kind) >= 0 && Number(o.ct) > 0;
-      }).map(function (o) {
-        return esc(o.name) + '：残り' + esc(o.ct);
-      });
-      cs.innerHTML = list.length ? 'クールタイム中：' + list.join(' ／ ') : 'クールタイム中の人格はありません';
-    }
   }
 
   function renderList() {
