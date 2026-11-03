@@ -1221,7 +1221,7 @@
     app.innerHTML = pcbarHTML() +
       (RO ? '<div class="banner"><p>[閲覧専用] 共有されたキャラシートです。</p></div>' : '') +
       '<fieldset class="sheet"' + (RO ? ' disabled' : '') + '>' +
-      basicHTML() + statusHTML() + supportHTML() + mainTabsHTML() +
+      basicHTML() + statusHTML() + mainTabsHTML() + supportHTML() +
       ownedHTML() + ctHTML() + scenarioHTML() + memoHTML() +
       '</fieldset>' + bottombarHTML() + datalistsHTML();
     opened.forEach(function (k) {
