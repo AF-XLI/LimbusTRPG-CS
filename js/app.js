@@ -356,6 +356,186 @@
     }
   }
 
+  function egoDetailOf(hit) {
+    return merge(emptyEgo(), {
+      req: hit.req || '',
+      passive: clone(hit.passive || {}),
+      awaken: clone(hit.awaken || {}),
+      corrosion: clone(hit.corrosion || {})
+    });
+  }
+
+  function byName(list, name) {
+    return (list || []).filter(function (x) {
+      return x.name === name;
+    })[0];
+  }
+
+  var EMPTY = '\u0001';
+
+  function isBlank(x) {
+    return x === undefined || x === null || x === '';
+  }
+
+  // 参照データ(base)との差分だけを返す。同じなら undefined。
+  function delta(base, cur) {
+    var out;
+    if (Array.isArray(cur) || Array.isArray(base)) {
+      if (!Array.isArray(base) || !Array.isArray(cur) || base.length !== cur.length) {
+        return isBlank(cur) || (Array.isArray(cur) && !cur.length && !(Array.isArray(base) && base.length)) ? undefined : { '=': cur };
+      }
+      out = cur.map(function (x, i) {
+        var d = delta(base[i], x);
+        return d === undefined ? {} : d;
+      });
+      while (out.length && isObj(out[out.length - 1]) && !Object.keys(out[out.length - 1]).length) {
+        out.pop();
+      }
+      return out.length ? out : undefined;
+    }
+    if (isObj(base) || isObj(cur)) {
+      var b = isObj(base) ? base : {};
+      var c = isObj(cur) ? cur : {};
+      out = {};
+      Object.keys(b).concat(Object.keys(c)).forEach(function (k) {
+        if (k in out) {
+          return;
+        }
+        var d = delta(b[k], c[k]);
+        if (d !== undefined) {
+          out[k] = d;
+        }
+      });
+      return Object.keys(out).length ? out : undefined;
+    }
+    if (isBlank(base) && isBlank(cur)) {
+      return undefined;
+    }
+    if (base === cur) {
+      return undefined;
+    }
+    return isBlank(cur) ? EMPTY : cur;
+  }
+
+  function undelta(base, d) {
+    if (d === undefined) {
+      return clone(base);
+    }
+    if (d === EMPTY) {
+      return '';
+    }
+    if (isObj(d) && '=' in d) {
+      return d['='];
+    }
+    if (Array.isArray(base) && Array.isArray(d)) {
+      return base.map(function (x, i) {
+        return undelta(x, d[i]);
+      });
+    }
+    if (isObj(base) && isObj(d)) {
+      var o = clone(base);
+      Object.keys(d).forEach(function (k) {
+        o[k] = undelta(base[k], d[k]);
+      });
+      return o;
+    }
+    if (isObj(d)) {
+      var z = {};
+      Object.keys(d).forEach(function (k) {
+        z[k] = undelta(undefined, d[k]);
+      });
+      return z;
+    }
+    return d;
+  }
+
+  function pack(base, cur, name) {
+    var d = delta(base, cur);
+    var o = isObj(d) && !('=' in d) ? d : {};
+    o['@'] = name;
+    return o;
+  }
+
+  // 共有用: データファイルと同じ内容の部分は名前だけにして短くする
+  function shrinkForShare(c) {
+    var p = c.equipped && findPersona(c.equipped.name);
+    if (p) {
+      c.equipped = pack(personaEquipped(p), c.equipped, p.name);
+    }
+    EGO_RANKS.forEach(function (r) {
+      var hit = byName(D.egos, c.ego && c.ego[r]);
+      if (hit && c.egoDetail && c.egoDetail[r]) {
+        c.egoDetail[r] = pack(egoDetailOf(hit), c.egoDetail[r], hit.name);
+      }
+    });
+    (c.support || []).forEach(function (x, i) {
+      var hit = byName(D.supportPassives, x && x.name);
+      if (hit) {
+        c.support[i] = pack({ name: hit.name, cond: hit.cond, effect: hit.effect }, x, hit.name);
+      }
+    });
+    (c.items || []).forEach(function (x, i) {
+      var hit = byName(D.items, x && x.name);
+      if (hit) {
+        c.items[i] = pack({ name: hit.name, count: '', desc: hit.effect || '' }, x, hit.name);
+      }
+    });
+    ((c.owned && c.owned.personalities) || []).forEach(function (o) {
+      delete o.snapshot;
+    });
+    return c;
+  }
+
+  function expandShared(c) {
+    function open(x, make) {
+      if (isObj(x) && x['@'] !== undefined) {
+        var name = x['@'];
+        var d = {};
+        Object.keys(x).forEach(function (k) {
+          if (k !== '@') {
+            d[k] = x[k];
+          }
+        });
+        var base = make(name);
+        return base ? undelta(base, d) : x;
+      }
+      return x;
+    }
+    if (c.equipped) {
+      c.equipped = open(c.equipped, function (n) {
+        var p = findPersona(n);
+        return p ? personaEquipped(p) : null;
+      });
+    }
+    if (c.egoDetail) {
+      EGO_RANKS.forEach(function (r) {
+        if (c.egoDetail[r]) {
+          c.egoDetail[r] = open(c.egoDetail[r], function (n) {
+            var h = byName(D.egos, n);
+            return h ? egoDetailOf(h) : null;
+          });
+        }
+      });
+    }
+    if (Array.isArray(c.support)) {
+      c.support = c.support.map(function (x) {
+        return open(x, function (n) {
+          var h = byName(D.supportPassives, n);
+          return h ? { name: h.name, cond: h.cond, effect: h.effect } : null;
+        });
+      });
+    }
+    if (Array.isArray(c.items)) {
+      c.items = c.items.map(function (x) {
+        return open(x, function (n) {
+          var h = byName(D.items, n);
+          return h ? { name: h.name, count: '', desc: h.effect || '' } : null;
+        });
+      });
+    }
+    return c;
+  }
+
   function b64encode(bytes) {
     var s = '';
     for (var i = 0; i < bytes.length; i += 0x8000) {
@@ -388,7 +568,7 @@
     delete c.id;
     delete c.createdAt;
     delete c.updatedAt;
-    var json = JSON.stringify(compact(c) || {});
+    var json = JSON.stringify(compact(shrinkForShare(c)) || {});
     var bytes = new TextEncoder().encode(json);
     if (window.CompressionStream) {
       return streamBytes(bytes, window.CompressionStream).then(function (z) {
@@ -411,7 +591,7 @@
       p = Promise.resolve(bytes);
     }
     return p.then(function (b) {
-      var s = loadSheet(JSON.parse(new TextDecoder().decode(b)));
+      var s = loadSheet(expandShared(JSON.parse(new TextDecoder().decode(b))));
       s.id = uid();
       return s;
     });
@@ -1143,6 +1323,28 @@
     }
   }
 
+  function personaEquipped(p) {
+    var e = emptyEquipped();
+    e.name = p.name;
+    e.affiliation = p.affiliation || '';
+    e.hp = String(p.hp);
+    e.san = String(p.san);
+    e.speed = p.speed;
+    e.resist = clone(p.resist);
+    e.bullets = p.bullets === undefined ? '' : String(p.bullets);
+    e.passive = clone(p.passive);
+    p.tactics.forEach(function (t, i) {
+      if (i < 5) {
+        e.tactics[i] = merge(emptyTactic(), clone(t));
+      }
+    });
+    (p.extras || []).forEach(function (x) {
+      e.extras.push(merge(emptyExtra(), clone(x)));
+    });
+    e.notes = p.notes || '';
+    return e;
+  }
+
   function equipPersona(name) {
     var o = ownedFor(S, name);
     var p = findPersona(name);
@@ -1150,25 +1352,7 @@
       S.equipped = normEquipped(merge(emptyEquipped(), clone(o.snapshot)));
       S.equipped.name = name;
     } else if (p) {
-      var e = emptyEquipped();
-      e.name = p.name;
-      e.affiliation = p.affiliation || '';
-      e.hp = String(p.hp);
-      e.san = String(p.san);
-      e.speed = p.speed;
-      e.resist = clone(p.resist);
-      e.bullets = p.bullets === undefined ? '' : String(p.bullets);
-      e.passive = clone(p.passive);
-      p.tactics.forEach(function (t, i) {
-        if (i < 5) {
-          e.tactics[i] = merge(emptyTactic(), clone(t));
-        }
-      });
-      (p.extras || []).forEach(function (x) {
-        e.extras.push(merge(emptyExtra(), clone(x)));
-      });
-      e.notes = p.notes || '';
-      S.equipped = e;
+      S.equipped = personaEquipped(p);
     }
     if (name && !o) {
       S.owned.personalities.push({ name: name, kind: p ? p.kind : 'normal' });
@@ -1503,12 +1687,7 @@
         return x.name === v;
       })[0];
       if (hit) {
-        S.egoDetail[el.dataset.idx] = merge(emptyEgo(), {
-          req: hit.req || '',
-          passive: clone(hit.passive || {}),
-          awaken: clone(hit.awaken || {}),
-          corrosion: clone(hit.corrosion || {})
-        });
+        S.egoDetail[el.dataset.idx] = egoDetailOf(hit);
         rerender();
       }
     } else if (kind === 'spirit') {
