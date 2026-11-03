@@ -403,6 +403,20 @@ small {
   font-weight: bold;
 }
  
+.tabs.main {
+  margin-block-end: 0.75rem;
+}
+ 
+.tabs.main .tab {
+  padding: 0.5rem 1.25rem;
+  font-size: 1.125rem;
+}
+ 
+.tabs.main + .tabpanel .tabs,
+.tabpanel > .tabs {
+  margin-block-end: 0.75rem;
+}
+ 
 .row {
   display: flex;
   align-items: flex-end;
@@ -796,6 +810,14 @@ dialog::backdrop {
 }
  
 @media only screen and (max-width: 640px) {
+  .tab {
+    padding-inline: 0.5rem;
+  }
+ 
+  .tabs.main .tab {
+    padding: 0.5rem 0.75rem;
+  }
+ 
   #app {
     padding: 0.75rem;
   }
