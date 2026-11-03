@@ -3,6 +3,9 @@
   --accent-text: rgb(24, 18, 6);
   --bg: rgb(12, 11, 10);
   --header-bg: rgb(86, 0, 0);
+  --kw-buff: rgb(243, 190, 0);
+  --kw-debuff: rgb(224, 0, 0);
+  --kw-neutral: rgb(153, 101, 56);
   --border: rgb(72, 60, 36);
   --danger: rgb(226, 82, 68);
   --muted: rgb(166, 156, 136);
@@ -583,6 +586,54 @@ body.is-dragging {
 .f textarea:focus {
   outline: 0.125rem solid var(--accent);
   outline-offset: 0;
+}
+ 
+.view-text {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.625rem;
+  background: var(--bg);
+  border: 0.063rem solid var(--border);
+  border-radius: 0.375rem;
+  color: var(--text);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+ 
+.kw {
+  cursor: help;
+}
+ 
+.kw-buff {
+  color: var(--kw-buff);
+}
+ 
+.kw-debuff {
+  color: var(--kw-debuff);
+}
+ 
+.kw-neutral {
+  color: var(--kw-neutral);
+}
+ 
+.kw-tip {
+  position: fixed;
+  z-index: 100;
+  max-width: min(22rem, calc(100vw - 1rem));
+  padding: 0.5rem 0.75rem;
+  background: var(--surface);
+  border: 0.063rem solid var(--border);
+  border-radius: 0.375rem;
+  box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.6);
+  color: var(--text);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  pointer-events: none;
+  white-space: pre-line;
+}
+ 
+.kw-tip strong {
+  margin-inline-end: 0.5rem;
 }
  
 .memo-title {
