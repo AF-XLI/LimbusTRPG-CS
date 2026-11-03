@@ -634,6 +634,7 @@ body.is-dragging {
  
 .kw-tip strong {
   margin-inline-end: 0.5rem;
+  font-size: 1.313rem;
 }
  
 .memo-title {
