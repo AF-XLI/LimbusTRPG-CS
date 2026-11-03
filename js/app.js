@@ -8,6 +8,8 @@
   D.deathPassives = D.deathPassives || [];
   D.spirits = D.spirits || [];
   D.items = D.items || [];
+  D.buffs = D.buffs || [];
+  D.buffExclude = D.buffExclude || [];
   D.body = D.body || { families: [], specials: [] };
 
   var SINS = ['憤怒', '色欲', '怠惰', '暴食', '憂鬱', '傲慢', '嫉妬'];
@@ -654,6 +656,73 @@
     }).join('');
   }
 
+  var KW_CLASS = { 'バフ': 'kw-buff', 'デバフ': 'kw-debuff' };
+  var kwMap = null;
+  var kwRe = null;
+
+  function kwInit() {
+    if (kwMap) {
+      return;
+    }
+    kwMap = {};
+    var names = [];
+    D.buffs.forEach(function (b) {
+      var key = b.name.replace(/\s+/g, '');
+      if (D.buffExclude.indexOf(b.name) >= 0 || kwMap[key]) {
+        return;
+      }
+      kwMap[key] = b;
+      names.push(b.name);
+    });
+    names.sort(function (a, b) {
+      return b.length - a.length;
+    });
+    var parts = names.map(function (n) {
+      return n.replace(/[.*+?^${}()|[\]\\\/-]/g, '\\$&').replace(/\s+/g, '\\s?');
+    });
+    kwRe = parts.length ? new RegExp(parts.join('|'), 'g') : null;
+  }
+
+  function kwSpan(m) {
+    var b = kwMap[m.replace(/\s+/g, '')];
+    if (!b) {
+      return m;
+    }
+    return '<span class="kw ' + (KW_CLASS[b.kind] || 'kw-neutral') + '" data-kw="' + esc(b.name) + '">' + m + '</span>';
+  }
+
+  function hlText(escaped) {
+    if (!RO || !escaped) {
+      return escaped;
+    }
+    kwInit();
+    return kwRe ? escaped.replace(kwRe, kwSpan) : escaped;
+  }
+
+  function hlNode(root) {
+    if (!RO) {
+      return;
+    }
+    kwInit();
+    if (!kwRe) {
+      return;
+    }
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    var nodes = [];
+    while (walker.nextNode()) {
+      nodes.push(walker.currentNode);
+    }
+    nodes.forEach(function (n) {
+      kwRe.lastIndex = 0;
+      if (!kwRe.test(n.nodeValue)) {
+        return;
+      }
+      var span = document.createElement('span');
+      span.innerHTML = esc(n.nodeValue).replace(kwRe, kwSpan);
+      n.parentNode.replaceChild(span, n);
+    });
+  }
+
   function mdHTML(text) {
     if (!text) {
       return '';
@@ -795,6 +864,10 @@
   }
 
   function T(label, path, rows, cls, extra) {
+    if (RO) {
+      return '<div class="f' + (cls ? ' ' + cls : ' wide') + '"><span>' + label + '</span>' +
+        '<div class="view-text">' + hlText(esc(getPath(S, path))) + '</div></div>';
+    }
     return '<label class="f' + (cls ? ' ' + cls : ' wide') + '"><span>' + label + '</span>' +
       '<textarea data-path="' + path + '" rows="' + (rows || 3) + '"' + (extra || '') + '>' + esc(getPath(S, path)) + '</textarea></label>';
   }
@@ -931,7 +1004,7 @@
       F('保有弾丸数', 'equipped.bullets', { type: 'number', cls: 's-bul', ph: 'なし' }) +
       F('打撃', 'equipped.resist.blunt', { list: 'dl-resist', cls: 's-blu' }) +
       F('精神', 'spirit', { list: 'dl-spirit', fill: 'spirit', cls: 's-spi' }) +
-      '</div></div><p class="hint" id="spirit-hint">' + esc(spiritHint()) + '</p>' +
+      '</div></div><p class="hint" id="spirit-hint">' + hlText(esc(spiritHint())) + '</p>' +
       (e.notes !== undefined ? T('固有の効果・メモ', 'equipped.notes', 3) : '') +
       '</section>';
   }
@@ -1216,6 +1289,9 @@
     });
     document.body.classList.add('has-bar');
     updateDerived();
+    if (RO) {
+      Array.prototype.forEach.call(app.querySelectorAll('.rich.view'), hlNode);
+    }
     window.scrollTo(0, y);
   }
 
@@ -1699,6 +1775,62 @@
       }
     }
   }
+
+  var tip = null;
+
+  function hideTip() {
+    if (tip) {
+      tip.remove();
+      tip = null;
+    }
+  }
+
+  function showTip(el) {
+    var b = kwMap && kwMap[(el.dataset.kw || '').replace(/\s+/g, '')];
+    if (!b) {
+      return;
+    }
+    hideTip();
+    tip = document.createElement('div');
+    tip.className = 'kw-tip';
+    tip.setAttribute('role', 'tooltip');
+    tip.innerHTML = '<strong>' + esc(b.name) + '</strong><small>' + esc(b.kind) + '</small><div>' + esc(b.effect) + '</div>';
+    document.body.appendChild(tip);
+    var r = el.getBoundingClientRect();
+    var w = tip.offsetWidth;
+    var h = tip.offsetHeight;
+    var left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left));
+    var top = r.bottom + 6;
+    if (top + h > window.innerHeight - 8 && r.top - h - 6 > 8) {
+      top = r.top - h - 6;
+    }
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+
+  app.addEventListener('mouseover', function (ev) {
+    var el = ev.target.closest && ev.target.closest('.kw');
+    if (el && RO && window.matchMedia('(hover: hover)').matches) {
+      showTip(el);
+    }
+  });
+
+  app.addEventListener('mouseout', function (ev) {
+    if (ev.target.closest && ev.target.closest('.kw') && window.matchMedia('(hover: hover)').matches) {
+      hideTip();
+    }
+  });
+
+  document.addEventListener('click', function (ev) {
+    var el = ev.target.closest && ev.target.closest('.kw');
+    if (el && RO) {
+      showTip(el);
+    } else {
+      hideTip();
+    }
+  });
+
+  window.addEventListener('scroll', hideTip, { passive: true });
 
   app.addEventListener('keydown', function (ev) {
     var el = ev.target;
