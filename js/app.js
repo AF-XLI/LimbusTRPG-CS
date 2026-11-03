@@ -699,30 +699,6 @@
     return kwRe ? escaped.replace(kwRe, kwSpan) : escaped;
   }
 
-  function hlNode(root) {
-    if (!RO) {
-      return;
-    }
-    kwInit();
-    if (!kwRe) {
-      return;
-    }
-    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    var nodes = [];
-    while (walker.nextNode()) {
-      nodes.push(walker.currentNode);
-    }
-    nodes.forEach(function (n) {
-      kwRe.lastIndex = 0;
-      if (!kwRe.test(n.nodeValue)) {
-        return;
-      }
-      var span = document.createElement('span');
-      span.innerHTML = esc(n.nodeValue).replace(kwRe, kwSpan);
-      n.parentNode.replaceChild(span, n);
-    });
-  }
-
   function mdHTML(text) {
     if (!text) {
       return '';
@@ -1289,9 +1265,6 @@
     });
     document.body.classList.add('has-bar');
     updateDerived();
-    if (RO) {
-      Array.prototype.forEach.call(app.querySelectorAll('.rich.view'), hlNode);
-    }
     window.scrollTo(0, y);
   }
 
