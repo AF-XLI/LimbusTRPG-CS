@@ -937,13 +937,6 @@
       '</section>';
   }
 
-  function passiveHTML() {
-    return '<section class="card"><h2>パッシブ</h2><div class="grid">' +
-      F('名称', 'equipped.passive.name') + F('発動条件', 'equipped.passive.cond') +
-      T('効果', 'equipped.passive.effect', 2) +
-      '</div></section>';
-  }
-
   function supportHTML() {
     var slots = hasSpecial(S, 'supslot') ? 3 : 2;
     var h = '<section class="card"><h2>サポートパッシブ <small>装備枠 ' + slots + '</small></h2>' +
@@ -983,28 +976,60 @@
     return par + '-' + n;
   }
 
-  function tacticsHTML() {
-    var h = '<section class="card"><h2>戦術</h2>';
-    for (var i = 0; i < 5; i++) {
-      var p = 'equipped.tactics.' + i;
-      h += '<div class="sub tactic" data-tactic="' + i + '"><h3 class="title-row"><span>戦術' + i + (extraCount(i) ? '-1' : '') + ' -</span>' +
-        titleInput(p + '.name', '戦術名') + '</h3><div class="grid">' +
-        sinTypeHTML(p) +
-        T('効果', p + '.text', 5) +
-        '</div></div>';
-      S.equipped.extras.forEach(function (x, k) {
-        if (Number(x.parent) !== i) {
-          return;
-        }
-        var q = 'equipped.extras.' + k;
-        h += '<div class="sub tactic extra" data-extra="' + k + '"><h3 class="title-row"><span>戦術' + extraLabel(k) + ' -</span>' +
-          titleInput(q + '.name', '戦術名') + '</h3><div class="grid">' +
-          sinTypeHTML(q) +
-          T('効果', q + '.text', 5) +
-          '</div><div class="actions"><button type="button" class="btn small danger" data-action="del-extra" data-idx="' + k + '">削除</button></div></div>';
-      });
-      h += '<div class="actions extra-add"><button type="button" class="btn small" data-action="add-extra" data-parent="' + i + '">戦術' + i + '-' + (2 + extraCount(i)) + 'を追加</button></div>';
-    }
+  function tacticBlockHTML(i) {
+    var h = '';
+    var p = 'equipped.tactics.' + i;
+    h += '<div class="sub tactic" data-tactic="' + i + '"><h3 class="title-row"><span>戦術' + i + (extraCount(i) ? '-1' : '') + ' -</span>' +
+      titleInput(p + '.name', '戦術名') + '</h3><div class="grid">' +
+      sinTypeHTML(p) +
+      T('効果', p + '.text', 5) +
+      '</div></div>';
+    S.equipped.extras.forEach(function (x, k) {
+      if (Number(x.parent) !== i) {
+        return;
+      }
+      var q = 'equipped.extras.' + k;
+      h += '<div class="sub tactic extra" data-extra="' + k + '"><h3 class="title-row"><span>戦術' + extraLabel(k) + ' -</span>' +
+        titleInput(q + '.name', '戦術名') + '</h3><div class="grid">' +
+        sinTypeHTML(q) +
+        T('効果', q + '.text', 5) +
+        '</div><div class="actions"><button type="button" class="btn small danger" data-action="del-extra" data-idx="' + k + '">削除</button></div></div>';
+    });
+    return h + '<div class="actions extra-add"><button type="button" class="btn small" data-action="add-extra" data-parent="' + i + '">戦術' + i + '-' + (2 + extraCount(i)) + 'を追加</button></div>';
+  }
+
+  var TAC_ORDER = [1, 2, 3, 4, 0];
+  var tabState = { main: 'tactics', tactics: '1', ego: 'ZAYIN' };
+
+  function tabBar(group, items, cls) {
+    return '<div class="tabs' + (cls ? ' ' + cls : '') + '" role="tablist">' + items.map(function (t) {
+      return '<span class="tab' + (t[0] === tabState[group] ? ' on' : '') + '" role="tab" tabindex="0" data-action="tab" data-group="' + group + '" data-tab="' + t[0] + '">' + esc(t[1]) + '</span>';
+    }).join('') + '</div>';
+  }
+
+  function tabPanel(group, id, html) {
+    return '<div class="tabpanel" data-group="' + group + '" data-panel="' + id + '"' + (id === tabState[group] ? '' : ' hidden') + '>' + html + '</div>';
+  }
+
+  function mainTabsHTML() {
+    var h = '<section class="card">' + tabBar('main', [['tactics', '戦術'], ['ego', 'E.G.O'], ['passive', 'パッシブ']], 'main');
+    var tac = tabBar('tactics', TAC_ORDER.map(function (i) {
+      return [String(i), '戦術' + i];
+    }));
+    TAC_ORDER.forEach(function (i) {
+      tac += tabPanel('tactics', String(i), tacticBlockHTML(i));
+    });
+    var ego = tabBar('ego', EGO_RANKS.map(function (r) {
+      return [r, r];
+    }));
+    EGO_RANKS.forEach(function (r) {
+      ego += tabPanel('ego', r, egoBlockHTML(r));
+    });
+    var pas = '<div class="grid">' +
+      F('名称', 'equipped.passive.name') + F('発動条件', 'equipped.passive.cond') +
+      T('効果', 'equipped.passive.effect', 2) +
+      '</div>';
+    h += tabPanel('main', 'tactics', tac) + tabPanel('main', 'ego', ego) + tabPanel('main', 'passive', pas);
     return h + '</section>';
   }
 
@@ -1026,29 +1051,27 @@
     return h + '</div>' + noneHTML(S.items) + '<button type="button" class="btn" data-action="add-item">アイテムを追加</button>';
   }
 
-  function egoHTML() {
-    var h = '<section class="card"><h2>装備E.G.O</h2>';
-    EGO_RANKS.forEach(function (r) {
-      var b = 'egoDetail.' + r;
-      var cur = egoTabs[r] || 'awaken';
-      h += '<div class="sub tactic" data-ego="' + r + '">' + F(r, 'ego.' + r, { list: 'dl-ego-' + r, fill: 'ego', idx: r }) +
-        '<details class="detail" data-key="ego-' + r + '"><summary>必要資源・効果</summary><div class="stack">' +
-        F('必要資源', b + '.req') +
-        '<div class="tabs" role="tablist">' + EGO_TABS.map(function (t) {
-          return '<span class="tab' + (t[0] === cur ? ' on' : '') + '" role="tab" data-action="ego-tab" data-rank="' + r + '" data-tab="' + t[0] + '">' + t[1] + '</span>';
-        }).join('') + '</div>';
-      EGO_TABS.forEach(function (t) {
-        h += '<div class="tabpanel" data-rank="' + r + '" data-panel="' + t[0] + '"' + (t[0] === cur ? '' : ' hidden') + '>';
-        if (t[0] === 'passive') {
-          h += '<div class="grid">' + F('名称', b + '.passive.name') + F('発動条件', b + '.passive.cond') + T('効果', b + '.passive.effect', 4) + '</div>';
-        } else {
-          h += '<div class="stack">' + sinTypeHTML(b + '.' + t[0]) + T('効果', b + '.' + t[0] + '.text', 5) + '</div>';
-        }
-        h += '</div>';
-      });
-      h += '</div></details></div>';
+  function egoBlockHTML(r) {
+    var h = '';
+    var b = 'egoDetail.' + r;
+    var cur = egoTabs[r] || 'awaken';
+    h += '<div class="sub tactic" data-ego="' + r + '">' + F(r, 'ego.' + r, { list: 'dl-ego-' + r, fill: 'ego', idx: r }) +
+      '<details class="detail" data-key="ego-' + r + '"><summary>必要資源・効果</summary><div class="stack">' +
+      F('必要資源', b + '.req') +
+      '<div class="tabs" role="tablist">' + EGO_TABS.map(function (t) {
+        return '<span class="tab' + (t[0] === cur ? ' on' : '') + '" role="tab" data-action="ego-tab" data-rank="' + r + '" data-tab="' + t[0] + '">' + t[1] + '</span>';
+      }).join('') + '</div>';
+    EGO_TABS.forEach(function (t) {
+      h += '<div class="tabpanel" data-rank="' + r + '" data-panel="' + t[0] + '"' + (t[0] === cur ? '' : ' hidden') + '>';
+      if (t[0] === 'passive') {
+        h += '<div class="grid">' + F('名称', b + '.passive.name') + F('発動条件', b + '.passive.cond') + T('効果', b + '.passive.effect', 4) + '</div>';
+      } else {
+        h += '<div class="stack">' + sinTypeHTML(b + '.' + t[0]) + T('効果', b + '.' + t[0] + '.text', 5) + '</div>';
+      }
+      h += '</div>';
     });
-    return h + '</section>';
+    h += '</div></details></div>';
+    return h;
   }
 
   function ownedPersonaRow(o, i) {
@@ -1198,7 +1221,7 @@
     app.innerHTML = pcbarHTML() +
       (RO ? '<div class="banner"><p>[閲覧専用] 共有されたキャラシートです。</p></div>' : '') +
       '<fieldset class="sheet"' + (RO ? ' disabled' : '') + '>' +
-      basicHTML() + statusHTML() + passiveHTML() + supportHTML() + tacticsHTML() + egoHTML() +
+      basicHTML() + statusHTML() + supportHTML() + mainTabsHTML() +
       ownedHTML() + ctHTML() + scenarioHTML() + memoHTML() +
       '</fieldset>' + bottombarHTML() + datalistsHTML();
     opened.forEach(function (k) {
@@ -1546,6 +1569,16 @@
     'share-list': function (el) {
       openShare(loadSheet(clone(store.sheets[el.dataset.id])));
     },
+    'tab': function (el) {
+      var g = el.dataset.group;
+      tabState[g] = el.dataset.tab;
+      Array.prototype.forEach.call(app.querySelectorAll('.tab[data-group="' + g + '"]'), function (t) {
+        t.classList.toggle('on', t.dataset.tab === el.dataset.tab);
+      });
+      Array.prototype.forEach.call(app.querySelectorAll('.tabpanel[data-group="' + g + '"]'), function (p) {
+        p.hidden = p.dataset.panel !== el.dataset.tab;
+      });
+    },
     'ego-tab': function (el) {
       var r = el.dataset.rank;
       egoTabs[r] = el.dataset.tab;
@@ -1697,6 +1730,14 @@
       }
     }
   }
+
+  app.addEventListener('keydown', function (ev) {
+    var el = ev.target;
+    if ((ev.key === 'Enter' || ev.key === ' ') && el.classList && el.classList.contains('tab') && el.dataset.action) {
+      ev.preventDefault();
+      el.click();
+    }
+  });
 
   app.addEventListener('input', function (ev) {
     var el = ev.target;
