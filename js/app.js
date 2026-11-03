@@ -29,7 +29,7 @@
 
   var COLOR_RE = /^(#[0-9a-f]{3,8}|[a-z]{3,24}|(?:rgb|hsl)a?\([0-9.,%\s\/deg]+\))$/i;
 
-  var EGO_TABS = [['awaken', '覚醒'], ['corrosion', '侵食'], ['passive', 'パッシブ']];
+  var EGO_TABS = [['awaken', '覚醒'], ['corrosion', '侵食'], ['passive', 'E.G.Oパッシブ']];
   var egoTabs = {};
 
   var app = document.getElementById('app');
@@ -1055,8 +1055,8 @@
     var h = '';
     var b = 'egoDetail.' + r;
     var cur = egoTabs[r] || 'awaken';
-    h += '<div class="sub tactic" data-ego="' + r + '">' + F(r, 'ego.' + r, { list: 'dl-ego-' + r, fill: 'ego', idx: r }) +
-      '<details class="detail" data-key="ego-' + r + '"><summary>必要資源・効果</summary><div class="stack">' +
+    h += '<div class="sub tactic" data-ego="' + r + '">' + F('名称', 'ego.' + r, { list: 'dl-ego-' + r, fill: 'ego', idx: r }) +
+      '<div class="stack">' +
       F('必要資源', b + '.req') +
       '<div class="tabs" role="tablist">' + EGO_TABS.map(function (t) {
         return '<span class="tab' + (t[0] === cur ? ' on' : '') + '" role="tab" data-action="ego-tab" data-rank="' + r + '" data-tab="' + t[0] + '">' + t[1] + '</span>';
@@ -1070,7 +1070,7 @@
       }
       h += '</div>';
     });
-    h += '</div></details></div>';
+    h += '</div></div>';
     return h;
   }
 
