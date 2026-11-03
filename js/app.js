@@ -1794,7 +1794,7 @@
     tip = document.createElement('div');
     tip.className = 'kw-tip';
     tip.setAttribute('role', 'tooltip');
-    tip.innerHTML = '<strong>' + esc(b.name) + '</strong><small>' + esc(b.kind) + '</small><div>' + esc(b.effect) + '</div>';
+    tip.innerHTML = '<strong>' + esc(b.name) + '</strong><small>' + esc(b.kind) + '</small><div>' + hlText(esc(b.effect)) + '</div>';
     document.body.appendChild(tip);
     var r = el.getBoundingClientRect();
     var w = tip.offsetWidth;
